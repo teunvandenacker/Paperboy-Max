@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Routeplanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    textarea, button { width: 100%; padding: 10px; box-sizing: border-box; }
+    #map { height: 400px; }
+    .step-info { padding: 10px; background: #f9f9f9; border-top: 1px solid #ccc; }
+    .status-list { padding: 10px; font-size: 0.9em; }
+    .done { color: green; text-decoration: line-through; }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+
+<h3 style="padding:10px;">Voer adressen in (één per regel):</h3>
+<textarea id="addresses" rows="6">
+Damrak 1, Amsterdam
+Coolsingel 105, Rotterdam
+Grote Markt 1, Groningen
+Stadhuisplein 1, Eindhoven
+</textarea>
+<button onclick="startRoute()">Start Route</button>
+
+<div id="map"></div>
+<div class="step-info" id="stepInfo">
+  <strong>Volgende stop:</strong>
+  <div id="currentAddress">-</div>
+  <button onclick="markComplete()">Voltooid ✅</button>
+</div>
+<div class="status-list" id="statusList"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  const API_KEY = "YOUR_ORS_API_KEY_HERE";
+  let map, markers = [], route = [], currentStep = 0;
+
+  map = L.map('map').setView([52.1, 5.1], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  async function geocodeAddress(address) {
+    const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.features.length === 0) throw new Error("Niet gevonden: " + address);
+    const [lon, lat] = data.features[0].geometry.coordinates;
+    return { address, lat, lon };
+  }
+
+  async function startRoute() {
+    currentStep = 0;
+    route = [];
+    markers = [];
+    document.getElementById("statusList").innerHTML = "";
+    const lines = document.getElementById("addresses").value.trim().split("\n");
+    const coords = [];
+
+    for (let address of lines) {
+      try {
+        const result = await geocodeAddress(address);
+        coords.push(result);
+      } catch (e) {
+        alert(e.message);
+        return;
+      }
+    }
+
+    const jobs = coords.map((coord, i) => ({
+      id: i + 1,
+      location: [coord.lon, coord.lat]
+    }));
+    const vehicles = [{
+      id: 1,
+      profile: "driving-car",
+      start: [coords[0].lon, coords[0].lat],
+      end: [coords[0].lon, coords[0].lat]
+    }];
+
+    const optimization = await fetch("https://api.openrouteservice.org/optimization", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": API_KEY
+      },
+      body: JSON.stringify({ jobs, vehicles })
+    });
+
+    const result = await optimization.json();
+    const ordered = result.routes[0].steps.map(s =>
+      coords.find(c => c.lon === s.location[0] && c.lat === s.location[1])
+    );
+
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
+    });
+
+    const latlngs = [];
+    ordered.forEach((p, i) => {
+      const latlng = [p.lat, p.lon];
+      latlngs.push(latlng);
+      const marker = L.marker(latlng, { title: p.address });
+      marker.addTo(map).bindPopup(`#${i + 1}: ${p.address}`);
+      markers.push(marker);
+      route.push(p);
+    });
+
+    L.polyline(latlngs, { color: "blue" }).addTo(map);
+    map.fitBounds(latlngs);
+
+    updateStep();
+    updateStatus();
+  }
+
+  function updateStep() {
+    if (currentStep < route.length) {
+      const step = route[currentStep];
+      document.getElementById("currentAddress").textContent = `#${currentStep + 1}: ${step.address}`;
+      map.setView([step.lat, step.lon], 14);
+      markers[currentStep].openPopup();
+    } else {
+      document.getElementById("currentAddress").textContent = "Route voltooid 🎉";
+    }
+  }
+
+  function updateStatus() {
+    const list = route.map((r, i) => {
+      return `<div class="${i < currentStep ? 'done' : ''}">#${i + 1}: ${r.address}</div>`;
+    }).join("");
+    document.getElementById("statusList").innerHTML = list;
+  }
+
+  function markComplete() {
+    if (currentStep < markers.length) {
+      markers[currentStep].setIcon(new L.Icon.Default({ iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x-green.png' }));
+    }
+    currentStep++;
+    updateStep();
+    updateStatus();
+  }
+</script>
+
+</body>
+</html>
