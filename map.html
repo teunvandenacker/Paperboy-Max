@@ -65,7 +65,7 @@
     .progress-bar {
       position: relative;
       background: #d0d0d0;
-      height: 12px;
+      height: 30px;  /* verhoogd zodat emoji past */
       border-radius: 10px;
       overflow: hidden;
       margin-top: 8px;
@@ -80,11 +80,13 @@
 
     .bike-icon {
       position: absolute;
-      top: -20px;
+      top: 50%;
+      transform: translateY(-50%) scaleX(-1); /* verticaal centreren en horizontaal spiegelen */
       left: 0%;
-      font-size: 20px;
-      transform: scaleX(-1); /* Spiegel de fiets horizontaal */
+      font-size: 24px; /* iets groter zodat emoji goed zichtbaar */
       transition: left 0.3s ease;
+      pointer-events: none;
+      user-select: none;
     }
 
     .done-button {
@@ -96,6 +98,7 @@
       border: none;
       border-radius: 6px;
       font-size: 1em;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -168,7 +171,7 @@
       const progress = Math.min((xp / (total * 10)) * 100, 100);
 
       document.getElementById('progressFill').style.width = `${progress}%`;
-      document.getElementById('bikeIcon').style.left = `calc(${progress}% - 10px)`;
+      document.getElementById('bikeIcon').style.left = `calc(${progress}% - 12px)`;
 
       const remaining = document.querySelectorAll('#addressGroup button:not([disabled])').length;
       if (remaining === 0 && (currentGroup + 1) * groupSize < addresses.length) {
