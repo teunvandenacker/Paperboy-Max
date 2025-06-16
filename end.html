@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📦 Bezorging Voltooid - Paperboy Max</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #ecf0f1;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      display: inline-block;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .summary h2 {
+      font-size: 1.3em;
+      margin: 15px 0;
+    }
+
+    .summary span {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 Goed gedaan, Paperboy Max!</h1>
+
+  <div class="summary">
+    <h2>📦 Bezorgde adressen: <span id="delivered">0</span></h2>
+    <h2>💶 Verdiend: <span id="money">€ 0,00</span></h2>
+    <h2>🧬 Verdiende XP: <span id="xp">0</span></h2>
+  </div>
+
+  <button onclick="reset()">🔁 Begin opnieuw</button>
+
+  <script>
+    const delivered = parseInt(localStorage.getItem('deliveredCount') || '0');
+    const xp = parseInt(localStorage.getItem('xpTotal') || '0');
+    const money = (delivered * 0.15).toFixed(2);
+
+    document.getElementById('delivered').textContent = delivered;
+    document.getElementById('xp').textContent = xp;
+    document.getElementById('money').textContent = `€ ${money.replace('.', ',')}`;
+
+    function reset() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
