@@ -3,290 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paperboy Max</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <title>📬 Paperboy Max - Route Aanmaken</title>
   <style>
-    :root {
-      --primary: #3498db;
-      --accent: #2ecc71;
-      --text: #2c3e50;
-      --bg: #ecf0f1;
-      --done: #27ae60;
-    }
-
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #ecf0f1;
+      color: #2c3e50;
+      padding: 20px;
+      position: relative;
     }
-
-    header, .container {
-      padding: 16px;
+    h1 {
+      font-size: 1.8em;
     }
-
-    h1, h3 {
-      margin: 0 0 12px;
-      font-weight: 600;
-    }
-
-    textarea {
+    textarea, button {
       width: 100%;
       padding: 12px;
+      margin-top: 10px;
       font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      resize: vertical;
       box-sizing: border-box;
     }
-
     button {
-      margin-top: 12px;
-      padding: 12px 16px;
-      font-size: 1em;
-      background: var(--primary);
+      background-color: #3498db;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background-color 0.3s ease;
     }
-
     button:hover {
-      background: #2980b9;
+      background-color: #2980b9;
     }
 
-    #map {
-      height: 400px;
-    }
-
-    .step-info {
-      background: white;
-      border-top: 1px solid #ccc;
-      padding: 16px;
-      font-size: 1em;
-    }
-
-    .status-list {
-      background: white;
-      padding: 16px;
-      border-top: 1px solid #ccc;
-      font-size: 0.95em;
-    }
-
-    .status-item {
-      padding: 6px 0;
-    }
-
-    .done {
-      color: var(--done);
-      text-decoration: line-through;
-    }
-
-    .gamification {
+    /* Overlay voor visuele bevestiging */
+    #loadingOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(44, 62, 80, 0.85);
+      color: white;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      margin-top: 10px;
+      justify-content: center;
+      font-size: 1.5em;
+      z-index: 9999;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    progress {
-      width: 100%;
-      height: 12px;
-      appearance: none;
-      -webkit-appearance: none;
+    /* Simpele loader animatie */
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
     }
 
-    progress::-webkit-progress-bar {
-      background-color: #ccc;
-      border-radius: 5px;
-    }
-
-    progress::-webkit-progress-value {
-      background-color: var(--accent);
-      border-radius: 5px;
-      transition: width 0.3s ease;
-    }
-
-    #badge {
-      margin-top: 10px;
-      font-weight: bold;
-      color: var(--done);
-      animation: fadeIn 1s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @media (max-width: 600px) {
-      #map {
-        height: 300px;
-      }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
     }
   </style>
 </head>
 <body>
-
-<header>
-  <h1>📬 Paperboy Max 🚲</h1>
-  <h3>Voer je adressen in:</h3>
-  <textarea id="addresses" rows="6">
-Damrak 1, Amsterdam
+  <h1>📬 Paperboy Max</h1>
+  <p>Voer hieronder je adressen in. Klik op "Start route" om naar de kaart te gaan.</p>
+  <textarea id="addresses" rows="6">Damrak 1, Amsterdam
 Coolsingel 105, Rotterdam
 Grote Markt 1, Groningen
-Stadhuisplein 1, Eindhoven
-  </textarea>
-  <button onclick="startRoute()">Start Route</button>
+Stadhuisplein 1, Eindhoven</textarea>
+  <button onclick="saveRouteAndContinue()">Start route</button>
 
-  <div class="gamification">
-    <div><strong>XP:</strong> <span id="xp">0</span></div>
-    <div style="flex-grow:1;">
-      <progress id="progress" value="0" max="100"></progress>
-    </div>
+  <div id="loadingOverlay">
+    <div class="loader"></div>
+    Route wordt geladen...
   </div>
-  <div id="badge"></div>
-</header>
 
-<div id="map"></div>
-
-<div class="step-info" id="stepInfo">
-  <strong>Volgende stop:</strong>
-  <div id="currentAddress">-</div>
-  <button onclick="markComplete()">Voltooid ✅</button>
-</div>
-
-<div class="status-list" id="statusList"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-  const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
-  let map, markers = [], route = [], currentStep = 0, xp = 0;
-
-  map = L.map('map').setView([52.1, 5.1], 7);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
-
-  async function geocodeAddress(address) {
-    const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.features.length === 0) throw new Error("Niet gevonden: " + address);
-    const [lon, lat] = data.features[0].geometry.coordinates;
-    return { address, lat, lon };
-  }
-
-  async function startRoute() {
-    currentStep = 0;
-    xp = 0;
-    route = [];
-    markers = [];
-    document.getElementById("statusList").innerHTML = "";
-    document.getElementById("xp").textContent = "0";
-    document.getElementById("badge").textContent = "";
-    document.getElementById("progress").value = 0;
-
-    const lines = document.getElementById("addresses").value.trim().split("\n");
-    const coords = [];
-
-    for (let address of lines) {
-      try {
-        const result = await geocodeAddress(address);
-        coords.push(result);
-      } catch (e) {
-        alert(e.message);
+  <script>
+    function saveRouteAndContinue() {
+      const addresses = document.getElementById('addresses').value.trim();
+      if(!addresses) {
+        alert('Voer minstens één adres in.');
         return;
       }
+      // Opslaan
+      localStorage.setItem('addresses', addresses);
+
+      // Toon overlay
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+
+      // Wacht 1.5 seconde, ga dan door
+      setTimeout(() => {
+        window.location.href = 'map.html';
+      }, 1500);
     }
-
-    const jobs = coords.map((coord, i) => ({
-      id: i + 1,
-      location: [coord.lon, coord.lat]
-    }));
-    const vehicles = [{
-      id: 1,
-      profile: "driving-car",
-      start: [coords[0].lon, coords[0].lat],
-      end: [coords[0].lon, coords[0].lat]
-    }];
-
-    const optimization = await fetch("https://api.openrouteservice.org/optimization", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": API_KEY
-      },
-      body: JSON.stringify({ jobs, vehicles })
-    });
-
-    const result = await optimization.json();
-    const ordered = result.routes[0].steps.map(s =>
-      coords.find(c => c.lon === s.location[0] && c.lat === s.location[1])
-    );
-
-    map.eachLayer(layer => {
-      if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
-    });
-
-    const latlngs = [];
-    ordered.forEach((p, i) => {
-      const latlng = [p.lat, p.lon];
-      latlngs.push(latlng);
-      const marker = L.marker(latlng, { title: p.address });
-      marker.addTo(map).bindPopup(`#${i + 1}: ${p.address}`);
-      markers.push(marker);
-      route.push(p);
-    });
-
-    L.polyline(latlngs, { color: "#3498db" }).addTo(map);
-    map.fitBounds(latlngs);
-
-    updateStep();
-    updateStatus();
-  }
-
-  function updateStep() {
-    if (currentStep < route.length) {
-      const step = route[currentStep];
-      document.getElementById("currentAddress").textContent = `#${currentStep + 1}: ${step.address}`;
-      map.setView([step.lat, step.lon], 14);
-      markers[currentStep].openPopup();
-    } else {
-      document.getElementById("currentAddress").textContent = "🎉 Route voltooid!";
-      document.getElementById("badge").textContent = "🏅 Badge: Voltooier!";
-    }
-  }
-
-  function updateStatus() {
-    const list = route.map((r, i) => {
-      return `<div class="status-item ${i < currentStep ? 'done' : ''}">#${i + 1}: ${r.address}</div>`;
-    }).join("");
-    document.getElementById("statusList").innerHTML = list;
-  }
-
-  function updateXP() {
-    xp += 10;
-    document.getElementById("xp").textContent = xp;
-    const pct = Math.round((currentStep / route.length) * 100);
-    document.getElementById("progress").value = pct;
-  }
-
-  function markComplete() {
-    if (currentStep < markers.length) {
-      markers[currentStep].setIcon(new L.Icon.Default({
-        iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x-green.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png'
-      }));
-    }
-    updateXP();
-    currentStep++;
-    updateStep();
-    updateStatus();
-  }
-</script>
-
+  </script>
 </body>
 </html>
