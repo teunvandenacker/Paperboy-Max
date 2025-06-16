@@ -38,3 +38,98 @@
       max-width: 400px;
       min-height: 100px;
       font-size: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid #3498db;
+      resize: vertical;
+      font-family: monospace, monospace;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #3498db;
+      border: none;
+      color: white;
+      padding: 14px 28px;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 5px 10px rgba(52, 152, 219, 0.5);
+      transition: background-color 0.3s ease;
+      max-width: 400px;
+      width: 100%;
+      user-select: none;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+
+    .instructions {
+      max-width: 400px;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 0 10px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>📬 Paperboy Max 🚲</h1>
+
+  <div class="instructions">
+    Vul de adressen in, één per regel, bijvoorbeeld:<br />
+    <code>Zonnedauw 2, Mierlo</code><br />
+    <code>Zonnedauw 4, Mierlo</code><br />
+    <code>Zonnedauw 8, Mierlo</code><br />
+    <code>Zonnedauw 12, Mierlo</code>
+  </div>
+
+  <label for="addresses">Adressen (één per regel):</label>
+  <textarea id="addresses" placeholder="Voer hier de adressen in...">Zonnedauw 2, Mierlo
+Zonnedauw 4, Mierlo
+Zonnedauw 8, Mierlo
+Zonnedauw 12, Mierlo</textarea>
+
+  <button id="startRouteBtn">Route maken en starten</button>
+
+  <script>
+    const startBtn = document.getElementById('startRouteBtn');
+    const addressesInput = document.getElementById('addresses');
+
+    function validateAddresses(input) {
+      const lines = input.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      return lines.length >= 1;
+    }
+
+    startBtn.addEventListener('click', () => {
+      const inputVal = addressesInput.value;
+      if (!validateAddresses(inputVal)) {
+        alert('Vul minimaal één adres in!');
+        return;
+      }
+
+      const addresses = inputVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+      localStorage.setItem('paperboy_addresses', JSON.stringify(addresses));
+
+      window.location.href = 'map.html';
+    });
+  </script>
+</body>
+</html>
