@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📬 Paperboy Max 🚲 - Route</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+qY0IPxFj8D9r1czX6jujtLGQWaaS4Z2r8a6H3xz0="
+    crossorigin=""
+  />
+  <style>
+    /* Basis */
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: #ecf0f1;
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      margin: 10px 0 5px;
+    }
+
+    #map {
+      flex: 1 1 auto;
+      max-height: 50vh;
+      margin: 0 20px 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(44, 62, 80, 0.2);
+    }
+
+    /* Adreslijst + knoppen */
+    #addressList {
+      max-width: 400px;
+      margin: 0 auto 20px;
+      padding: 10px 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(44, 62, 80, 0.1);
+    }
+
+    .address-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .address-item {
+      flex: 1 1 48%;
+      background: #3498db;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(52, 152, 219, 0.6);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 140px;
+    }
+
+    .address-text {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+
+    .complete-btn {
+      background: #27ae60;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 0.9em;
+      user-select: none;
+    }
+    .complete-btn:hover {
+      background: #1e8449;
+    }
+    .complete-btn:disabled {
+      background: #95a5a6;
+      cursor: default;
+    }
+
+    /* Gamification balk */
