@@ -1,149 +1,242 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>📬 Paperboy Max 🚲</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #ecf0f1;
-      color: #2c3e50;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 70px; /* ruimte voor menu */
-    }
-    h1 {
-      font-size: 1.8em;
-      margin-bottom: 20px;
-    }
-    textarea, button, input[type="file"] {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 1em;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #2980b9;
-    }
-    #testAddressesBtn {
-      background-color: #27ae60;
-    }
-    #testAddressesBtn:hover {
-      background-color: #1e8449;
-    }
-    /* Onderin menu styling */
-    nav#bottomMenu {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #fff;
-      border-top: 1px solid #ccc;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-      z-index: 1000;
-    }
-    nav#bottomMenu button {
-      background: none;
-      border: none;
-      color: #3498db;
-      font-size: 1.2em;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px 10px;
-    }
-    nav#bottomMenu button:hover {
-      color: #2980b9;
-    }
-    nav#bottomMenu button span.icon {
-      font-size: 1.6em;
-      margin-bottom: 3px;
-      transform: translateX(0);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>📬 Paperboy Max 🚲</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+    background: #ecf0f1;
+    color: #2c3e50;
+    padding-bottom: 70px; /* ruimte voor ondermenu */
+  }
+  h1 {
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 25px;
+    font-size: 2em;
+  }
+  textarea {
+    width: 100%;
+    height: 150px;
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: monospace;
+  }
+  button {
+    margin-top: 15px;
+    width: 100%;
+    font-size: 1.1em;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #2980b9;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  input[type="file"] {
+    margin-top: 10px;
+  }
+  ul {
+    margin-top: 15px;
+    list-style: none;
+    padding-left: 0;
+  }
+  ul li {
+    margin-bottom: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: monospace;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .type {
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    color: white;
+    margin-left: 8px;
+    font-size: 0.85em;
+  }
+  .type.F {
+    background-color: #3498db; /* blauw */
+  }
+  .type.FK {
+    background-color: #e67e22; /* oranje */
+  }
+  nav#bottomMenu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+  }
+  nav#bottomMenu button {
+    background: none;
+    border: none;
+    color: #3498db;
+    font-size: 1.2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 10px;
+  }
+  nav#bottomMenu button:hover {
+    color: #2980b9;
+  }
+  nav#bottomMenu button span.icon {
+    font-size: 1.6em;
+    margin-bottom: 3px;
+  }
+</style>
 </head>
 <body>
-  <h1>📬 Paperboy Max 🚲</h1>
-  <p>Voer hieronder je adressen in. Klik op "Start route" om naar de kaart te gaan.</p>
 
-  <button id="testAddressesBtn" onclick="loadTestAddresses()">Test adressen</button>
-  <input type="file" id="csvFileInput" accept=".csv" />
-  <textarea id="addresses" rows="8" placeholder="Voer adressen in, elk met type (F of FK) en adres..."></textarea>
-  <button onclick="saveRouteAndContinue()">Start route</button>
+<h1>📬 Paperboy Max 🚲</h1>
 
-  <nav id="bottomMenu" aria-label="Navigatie menu">
-    <button onclick="location.href='index.html'" aria-label="Startpagina">
-      <span class="icon">🏠</span>
-      Start
-    </button>
-    <button onclick="location.href='map.html'" aria-label="Kaartweergave">
-      <span class="icon">🗺️</span>
-      Kaart
-    </button>
-    <button onclick="location.href='end.html'" aria-label="Resultaat">
-      <span class="icon">📋</span>
-      Resultaat
-    </button>
-  </nav>
+<button id="loadTest">Test adressen</button>
 
-  <script>
-    function loadTestAddresses() {
-      const testData = [
-        "F Zonnedauw 10, Mierlo",
-        "FK Zonnedauw 12, Mierlo",
-        "FK Zonnedauw 14, Mierlo",
-        "F Zonnedauw 18, Mierlo",
-        "F Meidoorn 2, Mierlo",
-        "F Meidoorn 4, Mierlo"
-      ];
-      document.getElementById('addresses').value = testData.join('\n');
-    }
+<label for="addressInput">Voer adressen in (adres gevolgd door F of FK):</label>
+<textarea id="addressInput" placeholder="Zonnedauw 10 F&#10;Zonnedauw 12 FK&#10;Zonnedauw 14 FK&#10;Zonnedauw 18 F&#10;Meidoorn 2 F&#10;Meidoorn 4 F"></textarea>
 
-    document.getElementById('csvFileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+<label for="fileUpload">Of upload een CSV bestand:</label>
+<input type="file" id="fileUpload" accept=".csv,.txt" />
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const text = event.target.result;
-        const lines = text.trim().split('\n');
-        const entries = lines.map(line => {
-          const parts = line.split(',');
-          let type = parts[0].trim().toUpperCase();
-          let adres = parts.slice(1).join(',').trim();
-          if (!adres.toLowerCase().includes('mierlo')) {
-            adres += ', Mierlo';
-          }
-          return `${type} ${adres}`;
-        });
-        document.getElementById('addresses').value = entries.join('\n');
-      };
-      reader.readAsText(file);
-    });
+<button id="startRoute">Start route</button>
 
-    function saveRouteAndContinue() {
-      const rawInput = document.getElementById('addresses').value.trim();
-      if (!rawInput) {
-        alert('Voer minimaal één adres in!');
-        return;
+<ul id="addressList"></ul>
+
+<nav id="bottomMenu" aria-label="Navigatie menu">
+  <button onclick="location.href='index.html'" aria-label="Startpagina">
+    <span class="icon">🏠</span>
+    Start
+  </button>
+  <button onclick="location.href='map.html'" aria-label="Kaartweergave">
+    <span class="icon">🗺️</span>
+    Kaart
+  </button>
+  <button onclick="location.href='end.html'" aria-label="Resultaat">
+    <span class="icon">📋</span>
+    Resultaat
+  </button>
+</nav>
+
+<script>
+  const addressInput = document.getElementById('addressInput');
+  const addressList = document.getElementById('addressList');
+  const fileUpload = document.getElementById('fileUpload');
+  const startRoute = document.getElementById('startRoute');
+  const loadTest = document.getElementById('loadTest');
+
+  // Functie om adresregels te tonen met kleuren
+  function showAddresses(addresses) {
+    addressList.innerHTML = '';
+    addresses.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      // Veronderstel laatste woord is F of FK
+      const parts = trimmed.split(' ');
+      const last = parts[parts.length - 1].toUpperCase();
+      const addrText = parts.slice(0, parts.length - 1).join(' ');
+      const li = document.createElement('li');
+      li.textContent = addrText;
+      const spanType = document.createElement('span');
+      spanType.classList.add('type');
+      if(last === 'F') {
+        spanType.textContent = 'F';
+        spanType.classList.add('F');
+      } else if(last === 'FK') {
+        spanType.textContent = 'FK';
+        spanType.classList.add('FK');
+      } else {
+        spanType.textContent = '?';
+        spanType.style.backgroundColor = '#7f8c8d';
       }
-      localStorage.setItem('addresses', rawInput);
-      window.location.href = 'map.html';
+      li.appendChild(spanType);
+      addressList.appendChild(li);
+    });
+  }
+
+  // Laad testadressen in textarea en toon ze met kleurcodes
+  loadTest.onclick = () => {
+    const testData = [
+      "Zonnedauw 10 F",
+      "Zonnedauw 12 FK",
+      "Zonnedauw 14 FK",
+      "Zonnedauw 18 F",
+      "Meidoorn 2 F",
+      "Meidoorn 4 F"
+    ];
+    addressInput.value = testData.join('\n');
+    showAddresses(testData);
+  };
+
+  // Toon huidige textarea inhoud als gekleurde lijst
+  addressInput.addEventListener('input', () => {
+    const lines = addressInput.value.split('\n');
+    showAddresses(lines);
+  });
+
+  // CSV upload verwerken
+  fileUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Veronderstel CSV of tekstbestand met elke adresregel op nieuwe regel
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+      addressInput.value = lines.join('\n');
+      showAddresses(lines);
+    };
+    reader.readAsText(file);
+  });
+
+  // Route starten en adressen opslaan
+  startRoute.onclick = () => {
+    const lines = addressInput.value.split('\n').map(l => l.trim()).filter(l => l !== '');
+    if(lines.length === 0) {
+      alert("Voer eerst adressen in.");
+      return;
     }
-  </script>
+    // Opslaan in localStorage en door naar kaart
+    localStorage.setItem('addresses', lines.join('\n'));
+    location.href = 'map.html';
+  };
+
+  // Init lijst met huidige textarea inhoud (als er is)
+  window.onload = () => {
+    if(addressInput.value.trim()) {
+      showAddresses(addressInput.value.split('\n'));
+    }
+  };
+</script>
+
 </body>
 </html>
