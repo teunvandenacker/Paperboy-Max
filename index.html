@@ -8,72 +8,86 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #ecf0f1;
-      color: #2c3e50;
       padding: 20px;
-      margin: 0;
-    }
-    header {
-      background: #ffffff;
-      padding: 16px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     h1 {
       font-size: 1.8em;
-      margin: 0;
     }
-    main {
-      margin-top: 20px;
+    .address-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-    textarea {
-      width: 100%;
-      padding: 12px;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      resize: vertical;
-      box-sizing: border-box;
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+    }
+    select {
+      width: 60px;
     }
     button {
+      margin-top: 15px;
       width: 100%;
       padding: 12px;
-      margin-top: 16px;
       font-size: 1em;
       background-color: #3498db;
       color: white;
       border: none;
       border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background-color: #2980b9;
-    }
-    p {
-      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📬 Paperboy Max 🚲</h1>
-  </header>
-  <main>
-    <p>Voer hieronder je adressen in. Eén adres per regel:</p>
-    <textarea id="addresses" rows="6">Zonnedauw 2, Mierlo
-Zonnedauw 4, Mierlo
-Zonnedauw 8, Mierlo
-Zonnedauw 12, Mierlo</textarea>
-    <button onclick="saveRouteAndContinue()">Start route</button>
-  </main>
+  <h1>📬 Paperboy Max</h1>
+  <p>Vul hieronder je adressen in en kies of het een F of FK levering is.</p>
+
+  <div id="addressList">
+    <div class="address-row">
+      <input type="text" placeholder="Adres" value="Zonnedauw 2, Mierlo">
+      <select>
+        <option value="F">F</option>
+        <option value="FK">FK</option>
+      </select>
+    </div>
+    <div class="address-row">
+      <input type="text" placeholder="Adres" value="Zonnedauw 4, Mierlo">
+      <select>
+        <option value="F">F</option>
+        <option value="FK">FK</option>
+      </select>
+    </div>
+    <div class="address-row">
+      <input type="text" placeholder="Adres" value="Zonnedauw 8, Mierlo">
+      <select>
+        <option value="F">F</option>
+        <option value="FK">FK</option>
+      </select>
+    </div>
+    <div class="address-row">
+      <input type="text" placeholder="Adres" value="Zonnedauw 12, Mierlo">
+      <select>
+        <option value="F">F</option>
+        <option value="FK">FK</option>
+      </select>
+    </div>
+  </div>
+
+  <button onclick="saveRouteAndContinue()">Start route</button>
 
   <script>
     function saveRouteAndContinue() {
-      const addresses = document.getElementById('addresses').value.trim();
-      if (!addresses) {
-        alert("Voer minimaal één adres in.");
-        return;
-      }
-      localStorage.setItem('addresses', addresses);
+      const addressElements = document.querySelectorAll('.address-row');
+      const entries = [];
+
+      addressElements.forEach(row => {
+        const address = row.querySelector('input').value.trim();
+        const type = row.querySelector('select').value;
+        if (address) {
+          entries.push({ address, type });
+        }
+      });
+
+      localStorage.setItem('addressData', JSON.stringify(entries));
       window.location.href = 'map.html';
     }
   </script>
