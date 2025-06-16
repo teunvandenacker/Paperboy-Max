@@ -143,7 +143,6 @@
         L.marker([lat, lon]).addTo(map).bindPopup(`${type} - ${address}`);
 
         const labelClass = type === 'FK' ? 'FK' : 'F';
-
         groupHTML.push(`
           <li>
             <div><span class="label ${labelClass}">${type}</span> ${address}</div>
@@ -163,12 +162,16 @@
       const progress = Math.min((xp / (total * 10)) * 100, 100);
       document.getElementById('progress').value = progress;
 
-      if (
-        document.querySelectorAll('#addressGroup button:not([disabled])').length === 0 &&
-        (currentGroup + 1) * groupSize < addressData.length
-      ) {
+      const groupDone = document.querySelectorAll('#addressGroup button:not([disabled])').length === 0;
+      const nextGroupExists = (currentGroup + 1) * groupSize < addressData.length;
+
+      if (groupDone && nextGroupExists) {
         currentGroup++;
         loadGroup();
+      } else if (groupDone && !nextGroupExists) {
+        localStorage.setItem('xpTotal', xp);
+        localStorage.setItem('deliveredCount', addressData.length);
+        window.location.href = 'end.html';
       }
     }
 
