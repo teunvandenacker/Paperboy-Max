@@ -11,6 +11,7 @@
       color: #2c3e50;
       padding: 20px;
       text-align: center;
+      margin-bottom: 70px; /* ruimte voor menu */
     }
     h1 {
       font-size: 1.8em;
@@ -40,6 +41,39 @@
     #testAddressesBtn:hover {
       background-color: #1e8449;
     }
+    /* Onderin menu styling */
+    nav#bottomMenu {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #fff;
+      border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    nav#bottomMenu button {
+      background: none;
+      border: none;
+      color: #3498db;
+      font-size: 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+    nav#bottomMenu button:hover {
+      color: #2980b9;
+    }
+    nav#bottomMenu button span.icon {
+      font-size: 1.6em;
+      margin-bottom: 3px;
+      transform: translateX(0);
+    }
   </style>
 </head>
 <body>
@@ -50,6 +84,21 @@
   <input type="file" id="csvFileInput" accept=".csv" />
   <textarea id="addresses" rows="8" placeholder="Voer adressen in, elk met type (F of FK) en adres..."></textarea>
   <button onclick="saveRouteAndContinue()">Start route</button>
+
+  <nav id="bottomMenu" aria-label="Navigatie menu">
+    <button onclick="location.href='index.html'" aria-label="Startpagina">
+      <span class="icon">🏠</span>
+      Start
+    </button>
+    <button onclick="location.href='map.html'" aria-label="Kaartweergave">
+      <span class="icon">🗺️</span>
+      Kaart
+    </button>
+    <button onclick="location.href='end.html'" aria-label="Resultaat">
+      <span class="icon">📋</span>
+      Resultaat
+    </button>
+  </nav>
 
   <script>
     function loadTestAddresses() {
@@ -71,12 +120,9 @@
       const reader = new FileReader();
       reader.onload = function(event) {
         const text = event.target.result;
-        // Simpel CSV parser: verwacht elke regel type + adres
-        // We gaan ervan uit dat CSV gescheiden is door komma's, eerste kolom = type, tweede = adres
         const lines = text.trim().split('\n');
         const entries = lines.map(line => {
           const parts = line.split(',');
-          // Voeg automatisch ", Mierlo" toe aan adres indien niet aanwezig
           let type = parts[0].trim().toUpperCase();
           let adres = parts.slice(1).join(',').trim();
           if (!adres.toLowerCase().includes('mierlo')) {
