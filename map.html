@@ -43,7 +43,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     font-weight: 600;
     font-family: monospace;
   }
@@ -67,11 +67,12 @@
     border: none;
     color: white;
     font-weight: 700;
-    font-size: 0.9em;
-    padding: 6px 12px;
-    border-radius: 5px;
+    font-size: 1.1em;
+    padding: 10px 20px;
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    min-width: 90px;
   }
   ul li button:disabled {
     background-color: #95a5a6;
@@ -176,9 +177,7 @@
 <script>
   const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
 
-  // Kaart met goede zoom op Mierlo init
   const map = L.map('map').setView([51.4195, 5.6165], 14);
-
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
@@ -198,7 +197,6 @@
       const address = parts.slice(0, parts.length - 1).join(' ') + ', Mierlo, Nederland';
       return {address, type};
     } else {
-      // fallback
       return {address: trimmed + ', Mierlo, Nederland', type: '?'};
     }
   }
@@ -211,14 +209,15 @@
       const [lon, lat] = data.features[0].geometry.coordinates;
       return {lat, lon};
     }
-    // fallback coords if fail
     return null;
   }
+
+  // Houd bij welke adressen gedaan zijn (per groep)
+  let doneIndexes = new Set();
 
   async function loadGroup() {
     const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
     const groupHTML = [];
-    // Marker verwijderen behalve tile layer
     map.eachLayer(layer => {
       if(layer instanceof L.Marker) {
         map.removeLayer(layer);
@@ -227,22 +226,29 @@
 
     let bounds = L.latLngBounds();
 
-    for(const line of group) {
+    for(let i=0; i<group.length; i++) {
+      const line = group[i];
       const {address, type} = parseAddress(line);
       const coords = await geocode(address);
       if(!coords) continue;
 
       bounds.extend([coords.lat, coords.lon]);
 
-      const marker = L.marker([coords.lat, coords.lon]).addTo(map);
-      marker.bindPopup(`${address}<br>Type: <strong>${type}</strong>`);
+      L.marker([coords.lat, coords.lon]).addTo(map).bindPopup(`${address}<br>Type: <strong>${type}</strong>`);
 
-      // Maak lijstitem met knop en kleur type
       const colorClass = (type === 'F') ? 'F' : (type === 'FK' ? 'FK' : '');
+
+      // Knop is alleen enabled als dit het eerst onvoltooide adres is
+      const isDone = doneIndexes.has(i);
+      const firstUndoneIndex = group.findIndex((_, idx) => !doneIndexes.has(idx));
+
       groupHTML.push(
-        `<li>${address.replace(', Mierlo, Nederland','')} 
-          <span class="type ${colorClass}">${type}</span>
-          <button onclick="completeAddress(this)">✅</button>
+        `<li>
+          ${type ? `<span class="type ${colorClass}">${type}</span>` : ''}
+          ${line.replace(/ (F|FK)$/i, '')}
+          <button 
+            onclick="completeAddress(this, ${i})" 
+            ${isDone || i !== firstUndoneIndex ? 'disabled' : ''}>✅ Klaar</button>
         </li>`
       );
     }
@@ -252,13 +258,12 @@
     if(group.length > 0) {
       map.fitBounds(bounds, {padding: [40, 40]});
     }
-
     updateProgress();
   }
 
   function updateProgress() {
     const total = addresses.length;
-    const done = currentGroup * groupSize;
+    const done = currentGroup * groupSize + doneIndexes.size;
     const percent = Math.min(100, (done / total) * 100);
     const progressBar = document.getElementById('progress');
     progressBar.value = percent;
@@ -266,29 +271,30 @@
     const emoji = document.getElementById('progressEmoji');
     const width = progressBar.clientWidth;
     const pos = (percent / 100) * width;
-    emoji.style.position = 'relative';
-    emoji.style.left = `${pos - 20}px`; // -20 to center emoji
+    emoji.style.left = `${pos - 20}px`; // center emoji
   }
 
-  // Markeer adres als gedaan en ga naar volgende groep
-  function completeAddress(button) {
+  // Als je op 'Klaar' klikt
+  function completeAddress(button, idx) {
     button.disabled = true;
-    // Misschien markeer visueel als gedaan
     button.parentElement.style.textDecoration = "line-through";
     button.parentElement.style.opacity = "0.6";
 
-    // Check of alle in huidige groep gedaan zijn
-    const allDone = [...button.parentElement.parentElement.children].every(li => li.querySelector('button').disabled);
-    if(allDone) {
+    doneIndexes.add(idx);
+
+    // Check of alle adressen in de groep gedaan zijn
+    if(doneIndexes.size === Math.min(groupSize, addresses.length - currentGroup * groupSize)) {
       currentGroup++;
+      doneIndexes.clear();
+
       if(currentGroup * groupSize >= addresses.length) {
         // Klaar met bezorgen
         localStorage.setItem('deliveredAddresses', addresses.join('\n'));
         location.href = 'end.html';
-      } else {
-        loadGroup();
+        return;
       }
     }
+    loadGroup();
     updateProgress();
   }
 
