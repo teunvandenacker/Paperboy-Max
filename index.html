@@ -2,134 +2,130 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>📬 Paperboy Max 🚲</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📬 Paperboy Max - Route</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #ecf0f1;
-      color: #2c3e50;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0 20px;
+      background: #ecf0f1;
+    }
+    header {
+      padding: 16px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #map {
+      height: 300px;
+    }
+    .group {
+      padding: 16px;
+      background: #fff;
+      margin-top: 10px;
+    }
+    .gamification {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
+      padding: 16px;
+      gap: 10px;
     }
-
-    h1 {
-      margin-top: 40px;
-      font-size: 2.5rem;
-      text-align: center;
-    }
-
-    label {
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 8px;
-      display: block;
-      max-width: 400px;
-      text-align: left;
-    }
-
-    textarea {
+    progress {
       width: 100%;
-      max-width: 400px;
-      min-height: 100px;
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 8px;
-      border: 2px solid #3498db;
-      resize: vertical;
-      font-family: monospace, monospace;
-      box-sizing: border-box;
-      margin-bottom: 20px;
+      height: 12px;
     }
-
     button {
-      background-color: #3498db;
-      border: none;
+      background-color: #27ae60;
       color: white;
-      padding: 14px 28px;
-      font-size: 1.2rem;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 5px 10px rgba(52, 152, 219, 0.5);
-      transition: background-color 0.3s ease;
-      max-width: 400px;
-      width: 100%;
-      user-select: none;
+      border: none;
+      padding: 6px 12px;
+      margin-left: 10px;
+      border-radius: 4px;
     }
-
-    button:hover:not(:disabled) {
-      background-color: #2980b9;
-    }
-
-    button:disabled {
-      background-color: #95a5a6;
-      cursor: not-allowed;
-    }
-
-    .instructions {
-      max-width: 400px;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 30px;
-      text-align: left;
-    }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 0 10px;
-      }
-      h1 {
-        font-size: 2rem;
-      }
+    li {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>📬 Paperboy Max 🚲</h1>
-
-  <div class="instructions">
-    Vul de adressen in, één per regel, bijvoorbeeld:<br />
-    <code>Zonnedauw 2, Mierlo</code><br />
-    <code>Zonnedauw 4, Mierlo</code><br />
-    <code>Zonnedauw 8, Mierlo</code><br />
-    <code>Zonnedauw 12, Mierlo</code>
+  <header>
+    <h1>📬 Paperboy Max</h1>
+  </header>
+  <div id="map"></div>
+  <div class="group" id="addressGroup"></div>
+  <div class="gamification">
+    <strong>XP:</strong> <span id="xp">0</span>
+    <progress id="progress" value="0" max="100"></progress>
   </div>
 
-  <label for="addresses">Adressen (één per regel):</label>
-  <textarea id="addresses" placeholder="Voer hier de adressen in...">Zonnedauw 2, Mierlo
-Zonnedauw 4, Mierlo
-Zonnedauw 8, Mierlo
-Zonnedauw 12, Mierlo</textarea>
-
-  <button id="startRouteBtn">Route maken en starten</button>
-
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const startBtn = document.getElementById('startRouteBtn');
-    const addressesInput = document.getElementById('addresses');
+    const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
+    const addresses = localStorage.getItem('addresses')?.split('\n').filter(a => a.trim()) || [];
+    const groupSize = 4;
+    let currentGroup = 0;
+    let xp = 0;
+    let markers = [];
 
-    function validateAddresses(input) {
-      const lines = input.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      return lines.length >= 1;
+    let map = L.map('map').setView([51.4216, 5.6175], 15); // Mierlo
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    async function geocode(address) {
+      try {
+        const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.features.length === 0) return null;
+        const [lon, lat] = data.features[0].geometry.coordinates;
+        return { lat, lon };
+      } catch (err) {
+        console.error('Geocode error:', err);
+        return null;
+      }
     }
 
-    startBtn.addEventListener('click', () => {
-      const inputVal = addressesInput.value;
-      if (!validateAddresses(inputVal)) {
-        alert('Vul minimaal één adres in!');
-        return;
+    async function loadGroup() {
+      const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
+      const groupHTML = [];
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      for (let addr of group) {
+        const coords = await geocode(addr);
+        if (coords) {
+          const marker = L.marker([coords.lat, coords.lon]).addTo(map).bindPopup(addr);
+          markers.push(marker);
+          groupHTML.push(`<li>${addr} <button onclick="completeAddress(this)">✅</button></li>`);
+        } else {
+          groupHTML.push(`<li>${addr} <span style="color:red;">(niet gevonden)</span></li>`);
+        }
       }
 
-      const addresses = inputVal.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (markers.length > 0) {
+        const groupBounds = L.latLngBounds(markers.map(m => m.getLatLng()));
+        map.fitBounds(groupBounds.pad(0.3));
+      }
 
-      localStorage.setItem('paperboy_addresses', JSON.stringify(addresses));
+      document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
+    }
 
-      window.location.href = 'map.html';
-    });
+    function completeAddress(btn) {
+      btn.disabled = true;
+      xp += 10;
+      document.getElementById('xp').textContent = xp;
+      const progress = Math.min((xp / (addresses.length * 10)) * 100, 100);
+      document.getElementById('progress').value = progress;
+
+      if (document.querySelectorAll('button:not([disabled])').length === 0 &&
+          (currentGroup + 1) * groupSize < addresses.length) {
+        currentGroup++;
+        loadGroup();
+      }
+    }
+
+    window.onload = loadGroup;
   </script>
 </body>
 </html>
