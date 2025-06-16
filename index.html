@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📬 Paperboy Max - Route Aanmaken</title>
+  <title>📬 Paperboy Max 🚲 - Route Aanmaken</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -11,16 +11,59 @@
       color: #2c3e50;
       padding: 20px;
       position: relative;
+      text-align: center;
     }
     h1 {
-      font-size: 1.8em;
+      font-size: 2em;
+      margin-bottom: 0;
     }
+    /* Pixel fiets animatie */
+    .bike-rider {
+      margin: 10px auto 20px;
+      width: 40px;
+      height: 40px;
+      position: relative;
+      image-rendering: pixelated;
+      animation: pedal 1s linear infinite;
+    }
+    /* Simpele pixel stijl blokjes om fiets en rijder te maken */
+    .bike-rider div {
+      position: absolute;
+      background: #2c3e50;
+      box-shadow:
+        10px 30px #3498db, /* achterwiel */
+        30px 30px #3498db, /* voorwiel */
+        10px 20px #2c3e50, /* frame */
+        20px 25px #2c3e50, /* frame */
+        25px 10px #2c3e50, /* stuur */
+        15px 10px #f39c12, /* hoofd */
+        15px 15px #e67e22, /* lichaam */
+        10px 15px #e67e22; /* been */
+    }
+    .bike-rider div:nth-child(1) {
+      width: 5px;
+      height: 5px;
+      left: 15px;
+      top: 10px;
+      border-radius: 50%;
+    }
+
+    @keyframes pedal {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(10deg) translateX(2px); }
+      100% { transform: rotate(0deg); }
+    }
+
     textarea, button {
       width: 100%;
       padding: 12px;
       margin-top: 10px;
       font-size: 1em;
       box-sizing: border-box;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
     }
     button {
       background-color: #3498db;
@@ -34,7 +77,6 @@
       background-color: #2980b9;
     }
 
-    /* Overlay voor visuele bevestiging */
     #loadingOverlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -51,7 +93,6 @@
       transition: opacity 0.3s ease;
     }
 
-    /* Simpele loader animatie */
     .loader {
       border: 6px solid #f3f3f3;
       border-top: 6px solid #3498db;
@@ -69,14 +110,13 @@
   </style>
 </head>
 <body>
-  <h1>📬 Paperboy Max</h1>
+  <h1>📬 Paperboy Max 🚲</h1>
+  <div class="bike-rider"><div></div></div>
   <p>Voer hieronder je adressen in. Klik op "Start route" om naar de kaart te gaan.</p>
-  <textarea id="addresses" rows="6">
-    Zonnedauw 2, Mierlo
-    Zonnedauw 6, Mierlo
-    Zonnedauw 12, Mierlo
-    Meidoorn 10, Mierlo
-</textarea>
+  <textarea id="addresses" rows="6">Zonnedauw 2, Mierlo
+Zonnedauw 4, Mierlo
+Zonnedauw 8, Mierlo
+Zonnedauw 12, Mierlo</textarea>
   <button onclick="saveRouteAndContinue()">Start route</button>
 
   <div id="loadingOverlay">
@@ -91,15 +131,10 @@
         alert('Voer minstens één adres in.');
         return;
       }
-      // Opslaan
       localStorage.setItem('addresses', addresses);
-
-      // Toon overlay
       const overlay = document.getElementById('loadingOverlay');
       overlay.style.visibility = 'visible';
       overlay.style.opacity = '1';
-
-      // Wacht 1.5 seconde, ga dan door
       setTimeout(() => {
         window.location.href = 'map.html';
       }, 1500);
