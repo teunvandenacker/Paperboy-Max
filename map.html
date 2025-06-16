@@ -2,194 +2,292 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📬 Paperboy Max 🚲</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📬 Paperboy Max - Route</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
+      margin: 0;
       background: #ecf0f1;
+      padding-bottom: 70px; /* ruimte voor menu */
     }
-
     header {
       padding: 16px;
       background: #fff;
       text-align: center;
+      font-size: 1.5em;
+      font-weight: 600;
+      color: #2c3e50;
     }
-
     #map {
       height: 300px;
-      width: 100%;
     }
-
     .group {
       padding: 16px;
       background: #fff;
       margin-top: 10px;
-    }
-
-    .group ul {
       list-style: none;
-      padding: 0;
     }
-
     .group li {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 1em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
     }
-
-    .group button {
-      margin-left: 8px;
-      background-color: #2ecc71;
+    .group li .type {
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 3px;
+      color: white;
+      margin-right: 10px;
+      flex-shrink: 0;
+      font-size: 0.9em;
+      font-family: monospace;
+    }
+    .type.F {
+      background-color: #3498db; /* blauw */
+    }
+    .type.FK {
+      background-color: #e67e22; /* oranje */
+    }
+    button.complete-btn {
+      background-color: #27ae60;
       border: none;
       color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
+      border-radius: 5px;
       cursor: pointer;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      transition: background-color 0.3s ease;
     }
-
+    button.complete-btn:disabled {
+      background-color: #95a5a6;
+      cursor: default;
+    }
+    button.complete-btn:hover:not(:disabled) {
+      background-color: #1e8449;
+    }
     .gamification {
-      background: #fff;
+      display: flex;
+      align-items: center;
       padding: 16px;
+      gap: 10px;
+      background: #fff;
+      margin-top: 10px;
     }
-
-    .progress-container {
-      position: relative;
-      height: 40px;
+    progress {
+      flex-grow: 1;
+      height: 24px;
+      border-radius: 12px;
+      overflow: visible;
       background: transparent;
-      border-radius: 16px;
-      overflow: hidden;
-      margin-top: 8px;
+      appearance: none;
+      -webkit-appearance: none;
+      position: relative;
     }
-
-    .progress-bar {
-      height: 100%;
+    progress::-webkit-progress-bar {
+      background: transparent;
+    }
+    progress::-webkit-progress-value {
       background: #3498db;
-      width: 0%;
-      transition: width 0.3s ease;
-      border-radius: 16px;
+      border-radius: 12px;
+      position: relative;
+      z-index: 1;
     }
-
-    .bike-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%) scaleX(-1);
-      left: 0%;
+    /* Fiets emoji styling */
+    #bike {
+      position: relative;
+      left: 0;
+      font-size: 24px;
+      transform: scaleX(-1); /* horizontaal gespiegeld */
+      user-select: none;
       transition: left 0.3s ease;
-      font-size: 1.5em;
+      z-index: 2;
+      pointer-events: none;
     }
-
-    nav {
+    /* Onderin menu styling */
+    nav#bottomMenu {
       position: fixed;
       bottom: 0;
+      left: 0;
       width: 100%;
-      display: flex;
       background: #fff;
       border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
     }
-
-    nav button {
-      flex: 1;
-      padding: 12px;
-      font-size: 1.2em;
+    nav#bottomMenu button {
       background: none;
       border: none;
+      color: #3498db;
+      font-size: 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       cursor: pointer;
+      padding: 5px 10px;
+    }
+    nav#bottomMenu button:hover {
+      color: #2980b9;
+    }
+    nav#bottomMenu button span.icon {
+      font-size: 1.6em;
+      margin-bottom: 3px;
+      transform: translateX(0);
     }
   </style>
 </head>
 <body>
-
-<header>
-  <h1>📬 Paperboy Max 🚲</h1>
-</header>
-
-<div id="map"></div>
-
-<div class="group" id="addressGroup"></div>
-
-<div class="gamification">
-  <div class="progress-container">
-    <div class="progress-bar" id="progressBar"></div>
-    <div class="bike-icon" id="bike" style="left: 0%;">🚲</div>
+  <header>📬 Paperboy Max</header>
+  <div id="map"></div>
+  <ul class="group" id="addressGroup"></ul>
+  <div class="gamification">
+    <div id="bike">🚲</div>
+    <progress id="progress" value="0" max="100"></progress>
   </div>
-</div>
 
-<nav>
-  <button onclick="location.href='index.html'">🏠</button>
-  <button onclick="location.href='map.html'">🗺️</button>
-  <button onclick="location.href='end.html'">✅</button>
-</nav>
+  <nav id="bottomMenu" aria-label="Navigatie menu">
+    <button onclick="location.href='index.html'" aria-label="Startpagina">
+      <span class="icon">🏠</span>
+      Start
+    </button>
+    <button onclick="location.href='map.html'" aria-label="Kaartweergave">
+      <span class="icon">🗺️</span>
+      Kaart
+    </button>
+    <button onclick="location.href='end.html'" aria-label="Resultaat">
+      <span class="icon">📋</span>
+      Resultaat
+    </button>
+  </nav>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-  const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
-  const map = L.map('map');
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
 
-  const addresses = localStorage.getItem('addresses')?.split('\n') || [];
-  const types = localStorage.getItem('types')?.split(',') || [];
-  const groupSize = 4;
-  let currentGroup = 0;
-  let xp = 0;
+    // Init map centered on Mierlo
+    const map = L.map('map').setView([51.4216, 5.6175], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-  async function geocode(address) {
-    const fullAddress = `${address}, Mierlo, Nederland`;
-    const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(fullAddress)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const [lon, lat] = data.features[0].geometry.coordinates;
-    return { address, lat, lon };
-  }
+    const rawAddresses = localStorage.getItem('addresses') || "";
+    const addresses = rawAddresses.split('\n').filter(line => line.trim().length > 0);
+    const groupSize = 4;
+    let currentGroup = 0;
+    let xp = 0;
 
-  async function loadGroup() {
-    const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
-    const groupHTML = [];
-    map.eachLayer(l => l instanceof L.Marker && map.removeLayer(l));
-    const bounds = [];
+    // Geocode with added 'Mierlo, Nederland' suffix if not present
+    async function geocode(address) {
+      let addr = address.trim();
+      if (!addr.toLowerCase().includes('mierlo')) addr += ', Mierlo';
+      if (!addr.toLowerCase().includes('nederland')) addr += ', Nederland';
 
-    for (let i = 0; i < group.length; i++) {
-      const addr = group[i];
-      const label = types[(currentGroup * groupSize) + i];
-      const { lat, lon } = await geocode(addr);
-      bounds.push([lat, lon]);
-      L.marker([lat, lon]).addTo(map).bindPopup(`${label} ${addr}`);
-      const color = label === "FK" ? "red" : "green";
-      groupHTML.push(`<li><span style="color:${color}; font-weight:bold;">${label}</span> ${addr} <button onclick="completeAddress(this)">✅</button></li>`);
+      const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(addr)}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.features && data.features.length > 0) {
+          const [lon, lat] = data.features[0].geometry.coordinates;
+          return { address, lat, lon };
+        }
+      } catch(e) {
+        console.error("Fout bij geocoding:", e);
+      }
+      return null;
     }
 
-    document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
+    async function loadGroup() {
+      const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
+      const listElem = document.getElementById('addressGroup');
+      listElem.innerHTML = '';
+      // Remove all markers first
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+          map.removeLayer(layer);
+        }
+      });
 
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [30, 30] });
+      const geocodedPoints = [];
+
+      for (let line of group) {
+        // Verwacht formaat: "F adres..." of "FK adres..."
+        const parts = line.trim().split(' ');
+        const type = parts[0].toUpperCase();
+        const addrText = parts.slice(1).join(' ');
+        const geo = await geocode(addrText);
+        if (geo) {
+          geocodedPoints.push([geo.lat, geo.lon]);
+          const marker = L.marker([geo.lat, geo.lon]).addTo(map).bindPopup(addrText);
+          const li = document.createElement('li');
+
+          const spanType = document.createElement('span');
+          spanType.textContent = type;
+          spanType.classList.add('type');
+          if(type === 'F') spanType.classList.add('F');
+          else if(type === 'FK') spanType.classList.add('FK');
+          else spanType.style.backgroundColor = '#7f8c8d'; // grijs fallback
+
+          li.appendChild(spanType);
+          li.appendChild(document.createTextNode(addrText));
+
+          const btn = document.createElement('button');
+          btn.textContent = 'Klaar met bezorgen';
+          btn.className = 'complete-btn';
+          btn.onclick = () => completeAddress(btn);
+          li.appendChild(btn);
+
+          listElem.appendChild(li);
+        }
+      }
+
+      if (geocodedPoints.length > 0) {
+        const bounds = L.latLngBounds(geocodedPoints);
+        map.fitBounds(bounds.pad(0.2));
+      }
+
+      updateProgress();
     }
-  }
 
-  function completeAddress(btn) {
-    btn.disabled = true;
-    xp += 10;
+    function completeAddress(btn) {
+      btn.disabled = true;
+      xp += 10;
+      updateProgress();
 
-    const total = addresses.length;
-    const progress = Math.min((xp / (total * 10)) * 100, 100);
-    document.getElementById('progressBar').style.width = progress + "%";
-    document.getElementById('bike').style.left = progress + "%";
-
-    const remaining = document.querySelectorAll('#addressGroup button:not([disabled])').length;
-
-    if (remaining === 0) {
-      if ((currentGroup + 1) * groupSize < addresses.length) {
-        currentGroup++;
-        loadGroup();
-      } else {
-        window.location.href = 'end.html';
+      // Check of alle knoppen van deze groep klaar zijn
+      const activeButtons = document.querySelectorAll('.group button.complete-btn:not(:disabled)');
+      if (activeButtons.length === 0) {
+        if ((currentGroup + 1) * groupSize < addresses.length) {
+          currentGroup++;
+          loadGroup();
+        }
       }
     }
-  }
 
-  loadGroup();
-</script>
+    function updateProgress() {
+      const progressBar = document.getElementById('progress');
+      const bike = document.getElementById('bike');
+      const totalXp = addresses.length * 10;
+      let percent = Math.min((xp / totalXp) * 100, 100);
+      progressBar.value = percent;
 
+      // Beweeg fiets van 0 tot 100% over de breedte minus fiets width
+      const progressWidth = progressBar.clientWidth;
+      const bikeWidth = bike.clientWidth || 24; // fallback
+      const maxLeft = progressWidth - bikeWidth;
+      const leftPx = maxLeft * (percent / 100);
+      bike.style.left = `${leftPx}px`;
+    }
+
+    loadGroup();
+  </script>
 </body>
 </html>
