@@ -3,116 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>📬 Paperboy Max 🚲</title>
+  <title>📬 Paperboy Max - Resultaat</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #ecf0f1;
-      margin: 0;
+      color: #2c3e50;
       padding: 20px;
       text-align: center;
-      color: #2c3e50;
+      margin-bottom: 70px; /* ruimte voor menu */
     }
     h1 {
-      margin-bottom: 24px;
+      font-size: 1.8em;
+      margin-bottom: 20px;
     }
     .scoreboard {
       background: white;
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 10px;
+      padding: 30px 20px;
       max-width: 320px;
       margin: 0 auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
     }
-    .score-item {
-      font-size: 2.5em;
-      margin: 20px 0;
-      font-weight: bold;
+    .score {
+      font-size: 3.5em;
+      font-weight: 700;
+      color: #3498db;
+      margin: 15px 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
     }
     .label {
-      font-size: 1em;
+      font-size: 1.2em;
       color: #555;
-      margin-bottom: 4px;
     }
-    nav {
+    /* Onderin menu styling */
+    nav#bottomMenu {
       position: fixed;
       bottom: 0;
+      left: 0;
       width: 100%;
-      display: flex;
       background: #fff;
       border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
     }
-    nav button {
-      flex: 1;
-      padding: 12px;
-      font-size: 1.5em;
+    nav#bottomMenu button {
       background: none;
       border: none;
+      color: #3498db;
+      font-size: 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       cursor: pointer;
+      padding: 5px 10px;
+    }
+    nav#bottomMenu button:hover {
+      color: #2980b9;
+    }
+    nav#bottomMenu button span.icon {
+      font-size: 1.6em;
+      margin-bottom: 3px;
+      transform: translateX(0);
     }
   </style>
 </head>
 <body>
-  <h1>📬 Paperboy Max 🚲</h1>
+  <h1>📬 Paperboy Max - Resultaat</h1>
 
-  <div class="scoreboard">
+  <div class="scoreboard" aria-live="polite" aria-atomic="true">
     <div>
-      <div class="label">Bezorgde F-adressen</div>
-      <div id="scoreF" class="score-item">0</div>
+      <div class="label">Aantal F adressen bezorgd</div>
+      <div id="scoreF" class="score">0</div>
     </div>
     <div>
-      <div class="label">Bezorgde FK-adressen</div>
-      <div id="scoreFK" class="score-item">0</div>
+      <div class="label">Aantal FK adressen bezorgd</div>
+      <div id="scoreFK" class="score">0</div>
     </div>
   </div>
 
-  <nav>
-    <button onclick="location.href='index.html'">🏠</button>
-    <button onclick="location.href='map.html'">🗺️</button>
-    <button onclick="location.href='end.html'">✅</button>
+  <nav id="bottomMenu" aria-label="Navigatie menu">
+    <button onclick="location.href='index.html'" aria-label="Startpagina">
+      <span class="icon">🏠</span>
+      Start
+    </button>
+    <button onclick="location.href='map.html'" aria-label="Kaartweergave">
+      <span class="icon">🗺️</span>
+      Kaart
+    </button>
+    <button onclick="location.href='end.html'" aria-label="Resultaat">
+      <span class="icon">📋</span>
+      Resultaat
+    </button>
   </nav>
 
   <script>
-    // Ophalen bezorgde adressen en types uit localStorage
-    const addresses = localStorage.getItem('addresses')?.split('\n') || [];
-    const types = localStorage.getItem('types')?.split(',') || [];
+    // Ophalen adressen uit localStorage
+    const rawAddresses = localStorage.getItem('addresses') || "";
+    const addresses = rawAddresses.split('\n').filter(line => line.trim() !== "");
 
-    // We gaan ervan uit dat alle adressen in types ook 'F' of 'FK' zijn
-    // We tellen alleen adressen waarvan de knop "klaar" is geweest (bezorgd)
-    // Hiervoor slaan we bezorgde adressen op in localStorage als 'deliveredIndices'
-    // Voor nu tellen we alle adressen omdat er geen opslag van 'klaar' in deze demo is
-    // Je kunt dit later aanpassen om alleen bezorgde adressen te tonen
+    // Tellen F en FK
+    let countF = 0;
+    let countFK = 0;
+    for (const addr of addresses) {
+      const prefix = addr.trim().split(' ')[0].toUpperCase();
+      if(prefix === 'F') countF++;
+      else if(prefix === 'FK') countFK++;
+    }
 
-    // Voor demo: stel dat alle adressen bezorgd zijn:
-    const deliveredIndices = [...Array(addresses.length).keys()]; 
-
-    // Functie om animatie van teller te doen
-    function animateValue(id, start, end, duration) {
-      let range = end - start;
+    function animateCount(element, start, end, duration) {
       let current = start;
-      let increment = end > start ? 1 : -1;
-      let stepTime = Math.abs(Math.floor(duration / range));
-      let obj = document.getElementById(id);
-      let timer = setInterval(() => {
+      const range = end - start;
+      const increment = end > start ? 1 : -1;
+      const stepTime = Math.abs(Math.floor(duration / range));
+      if(range === 0) {
+        element.textContent = end;
+        return;
+      }
+      const timer = setInterval(() => {
         current += increment;
-        obj.textContent = current;
-        if (current == end) {
-          clearInterval(timer);
-        }
+        element.textContent = current;
+        if(current === end) clearInterval(timer);
       }, stepTime);
     }
 
-    // Bereken hoeveel F en FK bezorgd zijn
-    let countF = 0;
-    let countFK = 0;
-    for (let i of deliveredIndices) {
-      if (types[i] === 'F') countF++;
-      else if (types[i] === 'FK') countFK++;
+    window.onload = () => {
+      animateCount(document.getElementById('scoreF'), 0, countF, 1000);
+      animateCount(document.getElementById('scoreFK'), 0, countFK, 1000);
     }
-
-    // Animate de score
-    animateValue("scoreF", 0, countF, 1500);
-    animateValue("scoreFK", 0, countFK, 1500);
   </script>
 </body>
 </html>
