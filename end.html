@@ -1,97 +1,118 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>📬 Paperboy Max 🚲</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #ecf0f1;
-      color: #2c3e50;
-      padding: 20px;
       margin: 0;
-      padding-bottom: 80px;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 1.8em;
-    }
-
-    .summary {
-      background: #fff;
       padding: 20px;
-      border-radius: 6px;
-      margin-top: 20px;
+      text-align: center;
+      color: #2c3e50;
     }
-
-    ul {
-      padding-left: 0;
-      list-style: none;
+    h1 {
+      margin-bottom: 24px;
     }
-
-    li {
-      margin-bottom: 8px;
+    .scoreboard {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 320px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    .bottom-nav {
+    .score-item {
+      font-size: 2.5em;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .label {
+      font-size: 1em;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    nav {
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: #fff;
-      border-top: 1px solid #ccc;
+      width: 100%;
       display: flex;
-      justify-content: space-around;
-      align-items: center;
-      font-size: 1.2em;
-      z-index: 1000;
+      background: #fff;
+      border-top: 1px solid #ccc;
     }
-
-    .bottom-nav a {
-      text-decoration: none;
-      color: #2c3e50;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .bottom-nav a:hover {
-      color: #3498db;
-    }
-
-    .bottom-nav a.active {
-      color: #3498db;
-      font-weight: bold;
+    nav button {
+      flex: 1;
+      padding: 12px;
+      font-size: 1.5em;
+      background: none;
+      border: none;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>📬 Paperboy Max 🚲</h1>
-  <div class="summary">
-    <h2>Bezorging voltooid!</h2>
-    <p>Je hebt alle adressen afgerond. Goed gedaan! 🎉</p>
-    <h3>Overzicht adressen:</h3>
-    <ul id="addressList"></ul>
+
+  <div class="scoreboard">
+    <div>
+      <div class="label">Bezorgde F-adressen</div>
+      <div id="scoreF" class="score-item">0</div>
+    </div>
+    <div>
+      <div class="label">Bezorgde FK-adressen</div>
+      <div id="scoreFK" class="score-item">0</div>
+    </div>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="index.html">🏠<br>Home</a>
-    <a href="map.html">🗺️<br>Kaart</a>
-    <a href="end.html" class="active">✅<br>Resultaat</a>
+  <nav>
+    <button onclick="location.href='index.html'">🏠</button>
+    <button onclick="location.href='map.html'">🗺️</button>
+    <button onclick="location.href='end.html'">✅</button>
   </nav>
 
   <script>
-    const addressData = JSON.parse(localStorage.getItem('addressData')) || [];
-    const list = document.getElementById('addressList');
+    // Ophalen bezorgde adressen en types uit localStorage
+    const addresses = localStorage.getItem('addresses')?.split('\n') || [];
+    const types = localStorage.getItem('types')?.split(',') || [];
 
-    addressData.forEach(item => {
-      const li = document.createElement('li');
-      const color = item.type === 'FK' ? 'red' : 'green';
-      li.innerHTML = `<span style="color:${color}; font-weight:bold;">${item.type}</span> ${item.address}`;
-      list.appendChild(li);
-    });
+    // We gaan ervan uit dat alle adressen in types ook 'F' of 'FK' zijn
+    // We tellen alleen adressen waarvan de knop "klaar" is geweest (bezorgd)
+    // Hiervoor slaan we bezorgde adressen op in localStorage als 'deliveredIndices'
+    // Voor nu tellen we alle adressen omdat er geen opslag van 'klaar' in deze demo is
+    // Je kunt dit later aanpassen om alleen bezorgde adressen te tonen
+
+    // Voor demo: stel dat alle adressen bezorgd zijn:
+    const deliveredIndices = [...Array(addresses.length).keys()]; 
+
+    // Functie om animatie van teller te doen
+    function animateValue(id, start, end, duration) {
+      let range = end - start;
+      let current = start;
+      let increment = end > start ? 1 : -1;
+      let stepTime = Math.abs(Math.floor(duration / range));
+      let obj = document.getElementById(id);
+      let timer = setInterval(() => {
+        current += increment;
+        obj.textContent = current;
+        if (current == end) {
+          clearInterval(timer);
+        }
+      }, stepTime);
+    }
+
+    // Bereken hoeveel F en FK bezorgd zijn
+    let countF = 0;
+    let countFK = 0;
+    for (let i of deliveredIndices) {
+      if (types[i] === 'F') countF++;
+      else if (types[i] === 'FK') countFK++;
+    }
+
+    // Animate de score
+    animateValue("scoreF", 0, countF, 1500);
+    animateValue("scoreFK", 0, countFK, 1500);
   </script>
 </body>
 </html>
