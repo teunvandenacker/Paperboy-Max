@@ -10,89 +10,92 @@
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
       background: #ecf0f1;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
     }
+
     header {
-      padding: 10px 16px;
-      background: #ffffff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
     }
-    h1 {
-      margin: 0;
-      font-size: 1.4em;
-    }
-    .progress-container {
-      padding: 10px 16px;
-      background: #ffffff;
-    }
-    #progressText {
-      font-size: 0.9em;
-      margin-bottom: 4px;
-    }
-    progress {
-      width: 100%;
-      height: 12px;
-    }
+
     #map {
-      height: 200px;
+      height: 300px;
     }
+
     .group {
-      padding: 10px 16px;
-      background: #ffffff;
+      padding: 16px;
+      background: #fff;
+      margin-top: 10px;
     }
+
     .group ul {
       list-style: none;
       padding: 0;
-      margin: 0;
     }
+
     .group li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #fff;
+      padding: 10px;
       margin-bottom: 8px;
-      padding: 8px;
-      background: #f7f9fa;
-      border-radius: 6px;
-    }
-    .label {
-      display: inline-block;
-      padding: 3px 8px;
-      font-size: 0.85em;
-      font-weight: bold;
-      color: white;
+      border-left: 5px solid #3498db;
       border-radius: 4px;
-      margin-right: 10px;
-      min-width: 30px;
-      text-align: center;
     }
-    .label.F {
-      background-color: #3498db;
+
+    .group li[data-type="FK"] {
+      border-left-color: #e67e22;
     }
-    .label.FK {
-      background-color: #2ecc71;
-    }
-    button {
-      background-color: #2ecc71;
+
+    .group button {
+      margin-left: 10px;
+      padding: 4px 8px;
+      background-color: #27ae60;
       border: none;
       color: white;
-      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .gamification {
+      position: relative;
+      background: #fff;
+      padding: 16px;
+      border-top: 1px solid #ccc;
+    }
+
+    .progress-bar {
+      position: relative;
+      background: #d0d0d0;
+      height: 12px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      background: #2ecc71;
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .bike-icon {
+      position: absolute;
+      top: -20px;
+      left: 0%;
+      font-size: 20px;
+      transform: scaleX(-1); /* Spiegel de fiets horizontaal */
+      transition: left 0.3s ease;
+    }
+
+    .done-button {
+      display: block;
+      margin: 16px auto;
+      padding: 12px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
       border-radius: 6px;
       font-size: 1em;
-      margin: 10px 8px 20px;
-      cursor: pointer;
-      width: calc(50% - 20px);
-    }
-    .button-row {
-      display: flex;
-      justify-content: space-around;
-      padding: 0 16px;
-      gap: 8px;
-    }
-    button:disabled {
-      background-color: #bdc3c7;
-      cursor: default;
     }
   </style>
 </head>
@@ -100,86 +103,85 @@
   <header>
     <h1>📬 Paperboy Max</h1>
   </header>
-  <div class="progress-container">
-    <div id="progressText">Voortgang: 0 / 0</div>
-    <progress id="progressBar" value="0" max="100"></progress>
-  </div>
+
   <div id="map"></div>
+
   <div class="group" id="addressGroup"></div>
-  <div class="button-row">
-    <button id="nextGroup" onclick="showNextGroup()">Volgende vier adressen</button>
-    <button id="finishBtn" onclick="endRoute()">Klaar met bezorgen</button>
+
+  <div class="gamification">
+    <div><strong>XP:</strong> <span id="xp">0</span></div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="bike-icon" id="bikeIcon">🚲</div>
+    </div>
   </div>
+
+  <button class="done-button" onclick="goToEnd()">Klaar met bezorgen</button>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
-    const rawData = localStorage.getItem('addressData');
-    const addressData = rawData ? JSON.parse(rawData) : [];
+    const data = JSON.parse(localStorage.getItem('addressData')) || [];
+    const addresses = data.map(d => d.address);
+    const types = data.map(d => d.type);
     const groupSize = 4;
     let currentGroup = 0;
-    let completedCount = 0;
-    const map = L.map('map');
-    const markers = L.featureGroup().addTo(map);
+    let xp = 0;
+
+    let map = L.map('map').setView([51.4216, 5.6175], 15); // Mierlo
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap'
     }).addTo(map);
+
     async function geocode(address) {
       const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
       const res = await fetch(url);
       const data = await res.json();
       const [lon, lat] = data.features[0].geometry.coordinates;
-      return { lat, lon };
+      return { address, lat, lon };
     }
-    async function showGroup() {
-      const group = addressData.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
+
+    async function loadGroup() {
+      const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
+      const groupTypes = types.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
       const groupHTML = [];
-      markers.clearLayers();
-      for (let entry of group) {
-        const { address, type } = entry;
-        const { lat, lon } = await geocode(address);
-        L.marker([lat, lon]).addTo(markers).bindPopup(`${type} - ${address}`);
-        groupHTML.push(`
-          <li>
-            <div><span class="label ${type}">${type}</span> ${address}</div>
-            <button onclick="completeAddress(this)">✅</button>
-          </li>
-        `);
+      map.eachLayer(l => l instanceof L.Marker && map.removeLayer(l));
+
+      for (let i = 0; i < group.length; i++) {
+        const addr = group[i];
+        const type = groupTypes[i];
+        const { lat, lon } = await geocode(addr);
+        L.marker([lat, lon]).addTo(map).bindPopup(addr);
+        groupHTML.push(
+          `<li data-type="${type}">${type} - ${addr} <button onclick="completeAddress(this)">✅</button></li>`
+        );
       }
+
       document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
-      map.fitBounds(markers.getBounds(), { padding: [20, 20] });
-      updateProgress();
-      updateNextButton();
     }
-    function completeAddress(button) {
-      if(button.disabled) return;
-      button.disabled = true;
-      completedCount++;
-      updateProgress();
-    }
-    function updateProgress() {
-      const total = addressData.length;
-      const percent = Math.min((completedCount / total) * 100, 100);
-      document.getElementById('progressBar').value = percent;
-      document.getElementById('progressText').textContent = `Voortgang: ${completedCount} / ${total}`;
-    }
-    function showNextGroup() {
-      const nextStart = (currentGroup + 1) * groupSize;
-      if (nextStart < addressData.length) {
+
+    function completeAddress(btn) {
+      btn.disabled = true;
+      xp += 10;
+      document.getElementById('xp').textContent = xp;
+      const total = addresses.length;
+      const progress = Math.min((xp / (total * 10)) * 100, 100);
+
+      document.getElementById('progressFill').style.width = `${progress}%`;
+      document.getElementById('bikeIcon').style.left = `calc(${progress}% - 10px)`;
+
+      const remaining = document.querySelectorAll('#addressGroup button:not([disabled])').length;
+      if (remaining === 0 && (currentGroup + 1) * groupSize < addresses.length) {
         currentGroup++;
-        showGroup();
+        loadGroup();
       }
     }
-    function updateNextButton() {
-      const nextStart = (currentGroup + 1) * groupSize;
-      document.getElementById('nextGroup').disabled = nextStart >= addressData.length;
-    }
-    function endRoute() {
-      // Sla voortgang op om te gebruiken op end.html
-      localStorage.setItem('completedCount', completedCount);
-      localStorage.setItem('totalCount', addressData.length);
+
+    function goToEnd() {
       window.location.href = 'end.html';
     }
-    showGroup();
+
+    loadGroup();
   </script>
 </body>
 </html>
