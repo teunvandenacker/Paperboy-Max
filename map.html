@@ -10,39 +10,57 @@
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
       background: #ecf0f1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
-      padding: 16px;
+      padding: 10px 16px;
       background: #ffffff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     h1 {
       margin: 0;
-      font-size: 1.6em;
+      font-size: 1.4em;
+    }
+
+    .progress-container {
+      padding: 10px 16px;
+      background: #ffffff;
+    }
+
+    #progressText {
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+
+    progress {
+      width: 100%;
+      height: 12px;
     }
 
     #map {
-      height: 300px;
+      height: 200px;
     }
 
     .group {
-      padding: 16px;
+      padding: 10px 16px;
       background: #ffffff;
-      margin-top: 10px;
     }
 
     .group ul {
       list-style: none;
       padding: 0;
+      margin: 0;
     }
 
     .group li {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       padding: 8px;
       background: #f7f9fa;
       border-radius: 6px;
@@ -68,25 +86,23 @@
       background-color: #2ecc71;
     }
 
-    .gamification {
-      display: flex;
-      align-items: center;
-      padding: 16px;
-      gap: 10px;
-    }
-
-    progress {
-      width: 100%;
-      height: 12px;
-    }
-
     button {
       background-color: #2ecc71;
       border: none;
       color: white;
-      padding: 6px 12px;
-      border-radius: 4px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 1em;
+      margin: 10px 8px 20px;
       cursor: pointer;
+      width: calc(50% - 20px);
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-around;
+      padding: 0 16px;
+      gap: 8px;
     }
 
     button:disabled {
@@ -100,18 +116,29 @@
     <h1>📬 Paperboy Max</h1>
   </header>
 
+  <div class="progress-container">
+    <div id="progressText">Voortgang: 0 / 0</div>
+    <progress id="progressBar" value="0" max="100"></progress>
+  </div>
+
   <div id="map"></div>
 
   <div class="group" id="addressGroup"></div>
 
-  <div class="gamification">
-    <strong>XP:</strong> <span id="xp">0</span>
-    <progress id="progress" value="0" max="100"></progress>
+  <div class="button-row">
+    <button id="nextGroup" onclick="showNextGroup()">Volgende vier adressen</button>
+    <button onclick="endRoute()">Klaar met bezorgen</button>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
+    const rawData = localStorage.getItem('addressData');
+    const addressData = rawData ? JSON.parse(rawData) : [];
+    const groupSize = 4;
+    let currentGroup = 0;
+    let completedCount = 0;
+
     const map = L.map('map');
     const markers = L.featureGroup().addTo(map);
 
@@ -119,21 +146,15 @@
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    const rawData = localStorage.getItem('addressData');
-    const addressData = rawData ? JSON.parse(rawData) : [];
-    const groupSize = 4;
-    let currentGroup = 0;
-    let xp = 0;
-
     async function geocode(address) {
       const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
       const res = await fetch(url);
       const data = await res.json();
       const [lon, lat] = data.features[0].geometry.coordinates;
-      return { address, lat, lon };
+      return { lat, lon };
     }
 
-    async function loadGroup() {
+    async function showGroup() {
       const group = addressData.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
       const groupHTML = [];
       markers.clearLayers();
@@ -141,45 +162,55 @@
       for (let entry of group) {
         const { address, type } = entry;
         const { lat, lon } = await geocode(address);
-
-        const marker = L.marker([lat, lon]).bindPopup(`${type} - ${address}`);
-        marker.addTo(markers);
-
-        const labelClass = type === 'FK' ? 'FK' : 'F';
+        L.marker([lat, lon]).addTo(markers).bindPopup(`${type} - ${address}`);
         groupHTML.push(`
           <li>
-            <div><span class="label ${labelClass}">${type}</span> ${address}</div>
+            <div><span class="label ${type}">${type}</span> ${address}</div>
             <button onclick="completeAddress(this)">✅</button>
           </li>
         `);
       }
 
       document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
-      map.fitBounds(markers.getBounds(), { padding: [30, 30] });
+      map.fitBounds(markers.getBounds(), { padding: [20, 20] });
+
+      updateProgress();
+      updateNextButton();
     }
 
-    function completeAddress(btn) {
-      btn.disabled = true;
-      xp += 10;
-      document.getElementById('xp').textContent = xp;
+    function completeAddress(button) {
+      button.disabled = true;
+      completedCount++;
+      updateProgress();
+    }
+
+    function updateProgress() {
       const total = addressData.length;
-      const progress = Math.min((xp / (total * 10)) * 100, 100);
-      document.getElementById('progress').value = progress;
+      const percent = Math.min((completedCount / total) * 100, 100);
+      document.getElementById('progressBar').value = percent;
+      document.getElementById('progressText').textContent = `Voortgang: ${completedCount} / ${total}`;
+    }
 
-      const groupDone = document.querySelectorAll('#addressGroup button:not([disabled])').length === 0;
-      const nextGroupExists = (currentGroup + 1) * groupSize < addressData.length;
-
-      if (groupDone && nextGroupExists) {
+    function showNextGroup() {
+      const nextStart = (currentGroup + 1) * groupSize;
+      if (nextStart < addressData.length) {
         currentGroup++;
-        loadGroup();
-      } else if (groupDone && !nextGroupExists) {
-        localStorage.setItem('xpTotal', xp);
-        localStorage.setItem('deliveredCount', addressData.length);
-        window.location.href = 'end.html';
+        showGroup();
       }
     }
 
-    loadGroup();
+    function updateNextButton() {
+      const nextStart = (currentGroup + 1) * groupSize;
+      document.getElementById('nextGroup').disabled = nextStart >= addressData.length;
+    }
+
+    function endRoute() {
+      alert("Route voltooid! 🎉");
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    showGroup();
   </script>
 </body>
 </html>
