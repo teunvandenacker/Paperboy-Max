@@ -104,6 +104,14 @@ Zonnedauw 12, Mierlo
   <button onclick="startRoute()">Start Route</button>
 </header>
 
+  <div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div><strong>XP:</strong> <span id="xp">0</span></div>
+    <div><strong>Voortgang:</strong> <progress id="progress" value="0" max="100"></progress></div>
+  </div>
+  <div id="badge" style="margin-top: 8px; color: #27ae60; font-weight: bold;"></div>
+</div>
+
 <div id="map"></div>
 
 <div class="step-info" id="stepInfo">
@@ -116,7 +124,7 @@ Zonnedauw 12, Mierlo
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-  const API_KEY = "YOUR_ORS_API_KEY_HERE";
+  const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
   let map, markers = [], route = [], currentStep = 0;
 
   map = L.map('map').setView([52.1, 5.1], 7);
@@ -226,6 +234,34 @@ Zonnedauw 12, Mierlo
     updateStep();
     updateStatus();
   }
+let xp = 0;
+
+function updateXP() {
+  xp += 10;
+  document.getElementById("xp").textContent = xp;
+  const pct = Math.round((currentStep / route.length) * 100);
+  document.getElementById("progress").value = pct;
+
+  if (pct === 100) {
+    document.getElementById("badge").textContent = "🏅 Badge: Route voltooid!";
+  }
+}
+
+function markComplete() {
+  if (currentStep < markers.length) {
+    markers[currentStep].setIcon(new L.Icon.Default({
+      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x-green.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png'
+    }));
+  }
+
+  updateXP(); // 🎯 Belangrijk: XP en voortgang bijwerken
+  currentStep++;
+  updateStep();
+  updateStatus();
+}
+
+  
 </script>
 
 </body>
