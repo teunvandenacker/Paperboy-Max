@@ -2,182 +2,194 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📬 Paperboy Max 🚲</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
+      font-family: 'Segoe UI', sans-serif;
       background: #ecf0f1;
-      padding-bottom: 80px; /* ruimte voor navigatiebalk */
     }
+
     header {
       padding: 16px;
       background: #fff;
       text-align: center;
     }
+
     #map {
       height: 300px;
+      width: 100%;
     }
+
     .group {
       padding: 16px;
       background: #fff;
       margin-top: 10px;
     }
-    .gamification {
-      display: flex;
-      align-items: center;
-      padding: 16px;
-      gap: 10px;
-    }
-    progress {
-      width: 100%;
-      height: 24px;
-      appearance: none;
-      position: relative;
-    }
-    #bikeIcon {
-      position: absolute;
-      top: -8px;
-      font-size: 24px;
-      transform: scaleX(-1);
+
+    .group ul {
+      list-style: none;
+      padding: 0;
     }
 
-    /* Navigatie onderin */
-    .bottom-nav {
+    .group li {
+      margin-bottom: 8px;
+    }
+
+    .group button {
+      margin-left: 8px;
+      background-color: #2ecc71;
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .gamification {
+      background: #fff;
+      padding: 16px;
+    }
+
+    .progress-container {
+      position: relative;
+      height: 40px;
+      background: transparent;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #3498db;
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 16px;
+    }
+
+    .bike-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%) scaleX(-1);
+      left: 0%;
+      transition: left 0.3s ease;
+      font-size: 1.5em;
+    }
+
+    nav {
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: #fff;
-      border-top: 1px solid #ccc;
+      width: 100%;
       display: flex;
-      justify-content: space-around;
-      align-items: center;
+      background: #fff;
+      border-top: 1px solid #ccc;
+    }
+
+    nav button {
+      flex: 1;
+      padding: 12px;
       font-size: 1.2em;
-      z-index: 1000;
-    }
-
-    .bottom-nav a {
-      text-decoration: none;
-      color: #2c3e50;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .bottom-nav a:hover {
-      color: #3498db;
-    }
-
-    .bottom-nav a.active {
-      color: #3498db;
-      font-weight: bold;
-    }
-
-    .complete-button {
-      margin: 16px;
-      width: calc(100% - 32px);
-      padding: 10px;
-      background: #27ae60;
-      color: white;
+      background: none;
       border: none;
-      font-size: 1em;
-      border-radius: 5px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>📬 Paperboy Max 🚲</h1>
-  </header>
 
-  <div id="map"></div>
-  <div class="group" id="addressGroup"></div>
+<header>
+  <h1>📬 Paperboy Max 🚲</h1>
+</header>
 
-  <div class="gamification">
-    <strong>XP:</strong> <span id="xp">0</span>
-    <div style="position: relative; width: 100%;">
-      <progress id="progress" value="0" max="100"></progress>
-      <div id="bikeIcon">🚲</div>
-    </div>
+<div id="map"></div>
+
+<div class="group" id="addressGroup"></div>
+
+<div class="gamification">
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="bike-icon" id="bike" style="left: 0%;">🚲</div>
   </div>
+</div>
 
-  <button class="complete-button" onclick="window.location.href='end.html'">Klaar met bezorgen</button>
+<nav>
+  <button onclick="location.href='index.html'">🏠</button>
+  <button onclick="location.href='map.html'">🗺️</button>
+  <button onclick="location.href='end.html'">✅</button>
+</nav>
 
-  <nav class="bottom-nav">
-    <a href="index.html">🏠<br>Home</a>
-    <a href="map.html" class="active">🗺️<br>Kaart</a>
-    <a href="end.html">✅<br>Resultaat</a>
-  </nav>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
+  const map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const API_KEY = "5b3ce3597851110001cf62484bec1b24cbf740958a710da8b4b95e76";
-    let map = L.map('map').setView([51.4216, 5.6175], 15);
+  const addresses = localStorage.getItem('addresses')?.split('\n') || [];
+  const types = localStorage.getItem('types')?.split(',') || [];
+  const groupSize = 4;
+  let currentGroup = 0;
+  let xp = 0;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+  async function geocode(address) {
+    const fullAddress = `${address}, Mierlo, Nederland`;
+    const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(fullAddress)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const [lon, lat] = data.features[0].geometry.coordinates;
+    return { address, lat, lon };
+  }
 
-    const addressData = JSON.parse(localStorage.getItem('addressData')) || [];
-    const addresses = addressData.map(item => item.address);
-    const types = addressData.map(item => item.type);
+  async function loadGroup() {
+    const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
+    const groupHTML = [];
+    map.eachLayer(l => l instanceof L.Marker && map.removeLayer(l));
+    const bounds = [];
 
-    const groupSize = 4;
-    let currentGroup = 0;
-    let xp = 0;
-
-    async function geocode(address) {
-      const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(address)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const [lon, lat] = data.features[0].geometry.coordinates;
-      return { address, lat, lon };
+    for (let i = 0; i < group.length; i++) {
+      const addr = group[i];
+      const label = types[(currentGroup * groupSize) + i];
+      const { lat, lon } = await geocode(addr);
+      bounds.push([lat, lon]);
+      L.marker([lat, lon]).addTo(map).bindPopup(`${label} ${addr}`);
+      const color = label === "FK" ? "red" : "green";
+      groupHTML.push(`<li><span style="color:${color}; font-weight:bold;">${label}</span> ${addr} <button onclick="completeAddress(this)">✅</button></li>`);
     }
 
-    async function loadGroup() {
-      const group = addresses.slice(currentGroup * groupSize, (currentGroup + 1) * groupSize);
-      const groupHTML = [];
-      map.eachLayer(l => l instanceof L.Marker && map.removeLayer(l));
+    document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
 
-      for (let i = 0; i < group.length; i++) {
-        const addr = group[i];
-        const { lat, lon } = await geocode(addr);
-        L.marker([lat, lon]).addTo(map).bindPopup(addr);
-        const label = types[(currentGroup * groupSize) + i];
-        const color = label === "FK" ? "red" : "green";
-        groupHTML.push(`<li style="list-style:none;"><span style="color:${color}; font-weight:bold;">${label}</span> ${addr} <button onclick="completeAddress(this)">✅</button></li>`);
-      }
-
-      document.getElementById('addressGroup').innerHTML = `<ul>${groupHTML.join('')}</ul>`;
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [30, 30] });
     }
+  }
 
-    function completeAddress(btn) {
-      btn.disabled = true;
-      xp += 10;
-      document.getElementById('xp').textContent = xp;
-      const total = addresses.length;
-      const progress = Math.min((xp / (total * 10)) * 100, 100);
-      document.getElementById('progress').value = progress;
-      moveBike(progress);
+  function completeAddress(btn) {
+    btn.disabled = true;
+    xp += 10;
 
-      if (document.querySelectorAll('button:not([disabled])').length === 0 && (currentGroup + 1) * groupSize < addresses.length) {
+    const total = addresses.length;
+    const progress = Math.min((xp / (total * 10)) * 100, 100);
+    document.getElementById('progressBar').style.width = progress + "%";
+    document.getElementById('bike').style.left = progress + "%";
+
+    const remaining = document.querySelectorAll('#addressGroup button:not([disabled])').length;
+
+    if (remaining === 0) {
+      if ((currentGroup + 1) * groupSize < addresses.length) {
         currentGroup++;
         loadGroup();
+      } else {
+        window.location.href = 'end.html';
       }
     }
+  }
 
-    function moveBike(progress) {
-      const bar = document.getElementById('progress');
-      const icon = document.getElementById('bikeIcon');
-      const barWidth = bar.clientWidth;
-      icon.style.left = `calc(${progress}% - 12px)`;
-    }
+  loadGroup();
+</script>
 
-    loadGroup();
-  </script>
 </body>
 </html>
