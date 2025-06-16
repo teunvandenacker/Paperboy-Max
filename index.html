@@ -15,45 +15,63 @@
       font-size: 1.8em;
       margin-bottom: 10px;
     }
-    textarea, input, button, select {
+    label {
+      font-weight: bold;
+    }
+    input[type="text"], select, button, input[type="file"] {
       width: 100%;
-      padding: 10px;
-      margin-top: 10px;
+      padding: 12px;
+      margin: 10px 0;
       font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
     }
     button {
       background-color: #3498db;
       color: white;
       border: none;
-      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
     }
-    label {
-      margin-top: 15px;
-      display: block;
-      font-weight: bold;
+    button:hover {
+      background-color: #2980b9;
     }
-    #addressList {
-      margin-top: 10px;
+    ul {
+      list-style: none;
+      padding-left: 0;
     }
-    #addressList li {
-      margin-bottom: 5px;
+    li {
+      background: #fff;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-left: 5px solid #3498db;
+      border-radius: 4px;
+    }
+    li[data-type="FK"] {
+      border-left-color: #e67e22;
     }
   </style>
 </head>
 <body>
   <h1>📬 Paperboy Max</h1>
+  <p>Voer adressen handmatig in of upload een CSV-bestand met kolommen <strong>adres,type</strong>.<br>Je hoeft "Mierlo, Nederland" niet toe te voegen — dat gebeurt automatisch.</p>
 
-  <label for="csvUpload">📄 Upload adressen (CSV met kolommen 'adres' en 'type'):</label>
-  <input type="file" id="csvUpload" accept=".csv" />
+  <label for="manualAddress">Adres:</label>
+  <input type="text" id="manualAddress" placeholder="Bijv. Zonnedauw 2" />
 
-  <label for="manualAddress">➕ Voeg handmatig een adres toe:</label>
-  <input type="text" id="manualAddress" placeholder="Bijv. Zonnedauw 2, Mierlo" />
+  <label for="manualType">Type:</label>
   <select id="manualType">
     <option value="F">F</option>
     <option value="FK">FK</option>
   </select>
+
   <button onclick="addManual()">Adres toevoegen</button>
 
+  <label for="csvUpload">Upload CSV-bestand:</label>
+  <input type="file" id="csvUpload" accept=".csv" />
+
+  <h3>Toegevoegde adressen:</h3>
   <ul id="addressList"></ul>
 
   <button onclick="saveAndContinue()">Start route</button>
@@ -62,6 +80,13 @@
     const addressList = [];
 
     document.getElementById('csvUpload').addEventListener('change', handleCSV);
+
+    function appendMierlo(address) {
+      const lower = address.toLowerCase();
+      if (!lower.includes('mierlo')) address += ', Mierlo';
+      if (!lower.includes('nederland')) address += ', Nederland';
+      return address;
+    }
 
     function handleCSV(event) {
       const file = event.target.files[0];
@@ -81,10 +106,11 @@
         lines.forEach(line => {
           const cols = line.split(',');
           if (cols.length >= 2) {
-            const adres = cols[0].trim();
+            const rawAddress = cols[0].trim();
+            const address = appendMierlo(rawAddress);
             const type = cols[1].trim().toUpperCase();
-            if (adres && (type === 'F' || type === 'FK')) {
-              addressList.push({ address: adres, type: type });
+            if (address && (type === 'F' || type === 'FK')) {
+              addressList.push({ address, type });
             }
           }
         });
@@ -96,7 +122,8 @@
     }
 
     function addManual() {
-      const address = document.getElementById('manualAddress').value.trim();
+      const raw = document.getElementById('manualAddress').value.trim();
+      const address = appendMierlo(raw);
       const type = document.getElementById('manualType').value;
       if (address && type) {
         addressList.push({ address, type });
@@ -107,7 +134,9 @@
 
     function renderList() {
       const list = document.getElementById('addressList');
-      list.innerHTML = addressList.map(entry => `<li>${entry.type} - ${entry.address}</li>`).join('');
+      list.innerHTML = addressList.map(entry =>
+        `<li data-type="${entry.type}">${entry.type} - ${entry.address}</li>`
+      ).join('');
     }
 
     function saveAndContinue() {
