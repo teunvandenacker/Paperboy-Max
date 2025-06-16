@@ -16,7 +16,7 @@
       font-size: 1.8em;
       margin-bottom: 20px;
     }
-    textarea, button {
+    textarea, button, input[type="file"] {
       width: 100%;
       padding: 12px;
       margin-top: 10px;
@@ -47,6 +47,7 @@
   <p>Voer hieronder je adressen in. Klik op "Start route" om naar de kaart te gaan.</p>
 
   <button id="testAddressesBtn" onclick="loadTestAddresses()">Test adressen</button>
+  <input type="file" id="csvFileInput" accept=".csv" />
   <textarea id="addresses" rows="8" placeholder="Voer adressen in, elk met type (F of FK) en adres..."></textarea>
   <button onclick="saveRouteAndContinue()">Start route</button>
 
@@ -62,6 +63,31 @@
       ];
       document.getElementById('addresses').value = testData.join('\n');
     }
+
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = event.target.result;
+        // Simpel CSV parser: verwacht elke regel type + adres
+        // We gaan ervan uit dat CSV gescheiden is door komma's, eerste kolom = type, tweede = adres
+        const lines = text.trim().split('\n');
+        const entries = lines.map(line => {
+          const parts = line.split(',');
+          // Voeg automatisch ", Mierlo" toe aan adres indien niet aanwezig
+          let type = parts[0].trim().toUpperCase();
+          let adres = parts.slice(1).join(',').trim();
+          if (!adres.toLowerCase().includes('mierlo')) {
+            adres += ', Mierlo';
+          }
+          return `${type} ${adres}`;
+        });
+        document.getElementById('addresses').value = entries.join('\n');
+      };
+      reader.readAsText(file);
+    });
 
     function saveRouteAndContinue() {
       const rawInput = document.getElementById('addresses').value.trim();
