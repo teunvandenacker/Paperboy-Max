@@ -81,6 +81,10 @@
   ul li button:hover:not(:disabled) {
     background-color: #27ae60;
   }
+  ul li.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
   .gamification {
     background: #fff;
     margin: 12px 16px;
@@ -183,7 +187,7 @@
   }).addTo(map);
 
   let addresses = localStorage.getItem('addresses')?.split('\n').filter(l => l.trim() !== '') || [];
-  const groupSize = 4;
+  const groupSize = 6;
   let currentGroup = 0;
   let xp = 0;
 
@@ -238,17 +242,16 @@
 
       const colorClass = (type === 'F') ? 'F' : (type === 'FK' ? 'FK' : '');
 
-      // Knop is alleen enabled als dit het eerst onvoltooide adres is
+      // Knop is disabled als adres gedaan is
       const isDone = doneIndexes.has(i);
-      const firstUndoneIndex = group.findIndex((_, idx) => !doneIndexes.has(idx));
 
       groupHTML.push(
-        `<li>
+        `<li class="${isDone ? 'completed' : ''}">
           ${type ? `<span class="type ${colorClass}">${type}</span>` : ''}
           ${line.replace(/ (F|FK)$/i, '')}
           <button 
             onclick="completeAddress(this, ${i})" 
-            ${isDone || i !== firstUndoneIndex ? 'disabled' : ''}>✅ Klaar</button>
+            ${isDone ? 'disabled' : ''}>✅ Klaar</button>
         </li>`
       );
     }
@@ -258,6 +261,7 @@
     if(group.length > 0) {
       map.fitBounds(bounds, {padding: [40, 40]});
     }
+
     updateProgress();
   }
 
@@ -271,14 +275,12 @@
     const emoji = document.getElementById('progressEmoji');
     const width = progressBar.clientWidth;
     const pos = (percent / 100) * width;
-    emoji.style.left = `${pos - 20}px`; // center emoji
+    emoji.style.left = `${pos - 20}px`;
   }
 
-  // Als je op 'Klaar' klikt
   function completeAddress(button, idx) {
     button.disabled = true;
-    button.parentElement.style.textDecoration = "line-through";
-    button.parentElement.style.opacity = "0.6";
+    button.parentElement.classList.add('completed');
 
     doneIndexes.add(idx);
 
