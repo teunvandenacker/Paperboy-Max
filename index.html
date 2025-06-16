@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>📬 Paperboy Max 🚲</title>
   <style>
     body {
@@ -10,116 +10,66 @@
       background: #ecf0f1;
       color: #2c3e50;
       padding: 20px;
-      margin: 0;
-      padding-bottom: 80px; /* ruimte voor onderin menu */
-    }
-
-    h1 {
-      font-size: 1.8em;
       text-align: center;
     }
-
+    h1 {
+      font-size: 1.8em;
+      margin-bottom: 20px;
+    }
     textarea, button {
       width: 100%;
       padding: 12px;
       margin-top: 10px;
       font-size: 1em;
+      box-sizing: border-box;
     }
-
     button {
       background-color: #3498db;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
-
-    .upload-section {
-      margin-top: 20px;
+    button:hover {
+      background-color: #2980b9;
     }
-
-    label, select {
-      display: block;
-      margin-top: 10px;
+    #testAddressesBtn {
+      background-color: #27ae60;
     }
-
-    /* Navigatiemenu onderin */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: #fff;
-      border-top: 1px solid #ccc;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      font-size: 1.2em;
-      z-index: 1000;
-    }
-
-    .bottom-nav a {
-      text-decoration: none;
-      color: #2c3e50;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .bottom-nav a:hover {
-      color: #3498db;
-    }
-
-    .bottom-nav a.active {
-      color: #3498db;
-      font-weight: bold;
+    #testAddressesBtn:hover {
+      background-color: #1e8449;
     }
   </style>
 </head>
 <body>
   <h1>📬 Paperboy Max 🚲</h1>
-  <p>Voer hieronder je adressen in of upload een CSV-bestand. Klik op "Start route" om naar de kaart te gaan.</p>
+  <p>Voer hieronder je adressen in. Klik op "Start route" om naar de kaart te gaan.</p>
 
-  <textarea id="addresses" rows="6" placeholder="Bijv: Zonnedauw 2 FK&#10;Zonnedauw 4 F&#10;..."></textarea>
-
-  <div class="upload-section">
-    <label for="fileInput">Upload CSV met adressen (één adres per regel, gevolgd door F of FK):</label>
-    <input type="file" id="fileInput" accept=".csv" />
-  </div>
-
+  <button id="testAddressesBtn" onclick="loadTestAddresses()">Test adressen</button>
+  <textarea id="addresses" rows="8" placeholder="Voer adressen in, elk met type (F of FK) en adres..."></textarea>
   <button onclick="saveRouteAndContinue()">Start route</button>
 
-  <!-- Navigatiemenu onderin -->
-  <nav class="bottom-nav">
-    <a href="index.html" class="active">🏠<br>Home</a>
-    <a href="map.html">🗺️<br>Kaart</a>
-    <a href="end.html">✅<br>Resultaat</a>
-  </nav>
-
   <script>
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const lines = evt.target.result.split('\n');
-        const textArea = document.getElementById('addresses');
-        textArea.value = lines.join('\n');
-      };
-      reader.readAsText(file);
-    });
+    function loadTestAddresses() {
+      const testData = [
+        "F Zonnedauw 10, Mierlo",
+        "FK Zonnedauw 12, Mierlo",
+        "FK Zonnedauw 14, Mierlo",
+        "F Zonnedauw 18, Mierlo",
+        "F Meidoorn 2, Mierlo",
+        "F Meidoorn 4, Mierlo"
+      ];
+      document.getElementById('addresses').value = testData.join('\n');
+    }
 
     function saveRouteAndContinue() {
-      const rawLines = document.getElementById('addresses').value.trim().split('\n');
-      const addressData = rawLines.map(line => {
-        const parts = line.trim().split(/\s+(?=F|FK$)/i);
-        let address = parts[0] || '';
-        let type = parts[1]?.toUpperCase() === 'FK' ? 'FK' : 'F';
-        address = `${address}, Mierlo, Nederland`;
-        return { address, type };
-      });
-      localStorage.setItem('addressData', JSON.stringify(addressData));
+      const rawInput = document.getElementById('addresses').value.trim();
+      if (!rawInput) {
+        alert('Voer minimaal één adres in!');
+        return;
+      }
+      localStorage.setItem('addresses', rawInput);
       window.location.href = 'map.html';
     }
   </script>
