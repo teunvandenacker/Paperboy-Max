@@ -1,76 +1,97 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📦 Bezorging Voltooid - Paperboy Max</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📬 Paperboy Max 🚲</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #ecf0f1;
-      padding: 40px;
-      text-align: center;
+      color: #2c3e50;
+      padding: 20px;
+      margin: 0;
+      padding-bottom: 80px;
     }
 
     h1 {
-      font-size: 2em;
-      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8em;
     }
 
     .summary {
       background: #fff;
       padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 6px;
+      margin-top: 20px;
     }
 
-    .summary h2 {
-      font-size: 1.3em;
-      margin: 15px 0;
+    ul {
+      padding-left: 0;
+      list-style: none;
     }
 
-    .summary span {
-      font-weight: bold;
+    li {
+      margin-bottom: 8px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background-color: #fff;
+      border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
       font-size: 1.2em;
+      z-index: 1000;
     }
 
-    button {
-      margin-top: 30px;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    .bottom-nav a {
+      text-decoration: none;
+      color: #2c3e50;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .bottom-nav a:hover {
+      color: #3498db;
+    }
+
+    .bottom-nav a.active {
+      color: #3498db;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>🎉 Goed gedaan, Paperboy Max!</h1>
-
+  <h1>📬 Paperboy Max 🚲</h1>
   <div class="summary">
-    <h2>📦 Bezorgde adressen: <span id="delivered">0</span></h2>
-    <h2>💶 Verdiend: <span id="money">€ 0,00</span></h2>
-    <h2>🧬 Verdiende XP: <span id="xp">0</span></h2>
+    <h2>Bezorging voltooid!</h2>
+    <p>Je hebt alle adressen afgerond. Goed gedaan! 🎉</p>
+    <h3>Overzicht adressen:</h3>
+    <ul id="addressList"></ul>
   </div>
 
-  <button onclick="reset()">🔁 Begin opnieuw</button>
+  <nav class="bottom-nav">
+    <a href="index.html">🏠<br>Home</a>
+    <a href="map.html">🗺️<br>Kaart</a>
+    <a href="end.html" class="active">✅<br>Resultaat</a>
+  </nav>
 
   <script>
-    const delivered = parseInt(localStorage.getItem('deliveredCount') || '0');
-    const xp = parseInt(localStorage.getItem('xpTotal') || '0');
-    const money = (delivered * 0.15).toFixed(2);
+    const addressData = JSON.parse(localStorage.getItem('addressData')) || [];
+    const list = document.getElementById('addressList');
 
-    document.getElementById('delivered').textContent = delivered;
-    document.getElementById('xp').textContent = xp;
-    document.getElementById('money').textContent = `€ ${money.replace('.', ',')}`;
-
-    function reset() {
-      localStorage.clear();
-      window.location.href = 'index.html';
-    }
+    addressData.forEach(item => {
+      const li = document.createElement('li');
+      const color = item.type === 'FK' ? 'red' : 'green';
+      li.innerHTML = `<span style="color:${color}; font-weight:bold;">${item.type}</span> ${item.address}`;
+      list.appendChild(li);
+    });
   </script>
 </body>
 </html>
